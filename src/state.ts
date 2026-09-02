@@ -81,3 +81,9 @@ export const removeTargetById = (
     targets: ReadonlyArray<FallingTargetView>,
     id: string,
 ): ReadonlyArray<FallingTargetView> => targets.filter(target => target.id !== id);
+
+//////////////////////////////////////////////////
+//Keep only the targets that still inside canvas// a safety function
+//////////////////////////////////////////////////
+export const removeTargetsOutsideCanvas = (targets: ReadonlyArray<FallingTargetView>)
+: ReadonlyArray<FallingTargetView> => targets.filter( target => target.y <= Viewport.CANVAS_HEIGHT);

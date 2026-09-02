@@ -1,4 +1,4 @@
-import { flipBit, moveAllTargets, lowestTarget, removeTargetById, targetMatchesDigitBank, hasReachedCheckLine } from "./state";
+import { flipBit, moveAllTargets, lowestTarget, removeTargetById, targetMatchesDigitBank, hasReachedCheckLine, removeTargetsOutsideCanvas } from "./state";
 import { Action, State } from "./types";
 
 //create a class
@@ -22,7 +22,7 @@ export class Tick implements Action {
     apply(state: State): State {
         if (state.gameEnd) { return state }
         
-    const movedTargets = moveAllTargets(state.allCurrentTargetsInPlay); //move every current target down first
+    const movedTargets = removeTargetsOutsideCanvas(moveAllTargets(state.allCurrentTargetsInPlay),); //move every current target down first
     const lowest = lowestTarget(movedTargets); //find the lowest target after movement
 
         //if there is no target, or the lowest target has not reached the line yet, just save the moved targets
