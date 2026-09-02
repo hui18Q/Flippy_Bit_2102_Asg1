@@ -1,5 +1,5 @@
-import { Action, Bit, DigitBank, State } from "./types";
-import { Target, Viewport } from "./constants";
+import { Action, Bit, DigitBank, State, FallingTargetView } from "./types";
+import { Target, Viewport, Constants } from "./constants";
 
 //a object with type (state) create starting state,  and is the actual starting game (actual value) instead of a blueprint
 export const initialState: State = {
@@ -33,3 +33,30 @@ export const reduceState = (
     action: Action,
 ): State =>
     action.apply(state); //return new state
+
+//////////////////////////////////
+//add movement function to state//
+//////////////////////////////////
+
+export const moveTarget = (target: FallingTargetView): FallingTargetView => 
+({
+    ...target,
+    y: target.y + Constants.FALL_SPEED,
+}); //target is object
+
+export const moveAllTargets = (targets: ReadonlyArray<FallingTargetView>):       
+ReadonlyArray<FallingTargetView> => targets.map(moveTarget); //target becomes array
+/*targets = [
+    {
+        id: "target-0",
+        value: 19,
+        x: 268,
+        y: 40,
+    },
+    {
+        id: "target-1",
+        value: 47,
+        x: 200,
+        y: 41,
+    },
+]; */
