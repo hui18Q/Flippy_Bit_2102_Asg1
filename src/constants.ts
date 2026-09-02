@@ -6,6 +6,12 @@ export const Viewport =
     CANVAS_HEIGHT: 400,
 } as const; //makes the object value fixed
 
+export const Target = 
+{
+    WIDTH: 64,
+    HEIGHT: 36,
+} as const;
+
 //define game constants
 export const Constants = {
     DIGIT_COUNT: 8, //binary ans -> 00000000 - 8 digits ttl
