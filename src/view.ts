@@ -59,12 +59,8 @@ const createSvgElement = (
     //Object.entries is a built-in function
     //example: { x: "10", y: "20"} becomes [["x", "10"], ["y", "20"]]
     //.forEach runs for every pair [k, v] k = property name, v = property value
-    //then:
-    //elem.setAttribute("x", "10")
-    //elem.setAttribute("y", "20")
-
-    return elem;
-    //after setAttribute, expected output could be: /<rect width="200" height="100" fill="deepskyblue" rx="10">
+    //then: elem.setAttribute("x", "10"), elem.setAttribute("y", "20")
+    return elem;//after setAttribute, expected output could be: /<rect width="200" height="100" fill="deepskyblue" rx="10">
 };
 
 /*
@@ -91,14 +87,25 @@ export const render = (): ((state: State) => void) => {
         //document.querySelector("#svgCanvas") finds the first element in the document with the id of "svgCanvas"
         //save it as a type SVGSVGElement : <svg> element
 
-        svg.setAttribute( "viewBox", `0 0 ${Viewport.CANVAS_WIDTH} ${Viewport.CANVAS_HEIGHT}`,);
         //viewBox = "0 0 600 400" , defines the position and dimensions of the SVG canvas
-        // Draw the row of digit toggles as a demonstration
-        const digitWidth = Viewport.CANVAS_WIDTH / Constants.DIGIT_COUNT;
-        //each digit gets: 600 / 8 = 75 pixels of horizontal space
+        svg.setAttribute( "viewBox", `0 0 ${Viewport.CANVAS_WIDTH} ${Viewport.CANVAS_HEIGHT}`,);
+        
+        
+        const checkLine = createSvgElement( svg.namespaceURI, "line",
+    {
+        x1: "0",   //x1,y1=startline; x2y2=endline
+        x2: `${Viewport.CANVAS_WIDTH}`,
+        y1: `${Constants.CHECK_LINE_Y}`,
+        y2: `${Constants.CHECK_LINE_Y}`,
+        stroke: "red", 
+        "stroke-width": "3",
+        "data-fb-check-line": "true",
+    },);
+    svg.appendChild(checkLine);
 
-        const digitCells = Array.from({
-            length: Constants.DIGIT_COUNT,
+        const digitWidth = Viewport.CANVAS_WIDTH / Constants.DIGIT_COUNT;//each digit gets: 600 / 8 = 75 pixels of horizontal space
+
+        const digitCells = Array.from({ length: Constants.DIGIT_COUNT,
         }).map((_, index) => {
             //Array.from({ length: Constants.DIGIT_COUNT }) creates an array with 8 positions
             //.map((_, index) => ...) runs once for every position
@@ -107,8 +114,7 @@ export const render = (): ((state: State) => void) => {
             //[
             //  { rect, text },
             //  { rect, text },
-            //  ...
-            //]
+            //  ...]
 
             const rect = createSvgElement(svg.namespaceURI, "rect",
                 {
@@ -119,17 +125,14 @@ export const render = (): ((state: State) => void) => {
                     fill: "#EF9A9A",
                     stroke: "black",
                     "stroke-width": "2",
-                    "data-fb-digit-index":
-                        `${index}`,
+                    "data-fb-digit-index": `${index}`,
                 },
             );
             //create one SVG rectangle for one bit
             //index 0: x = 0 * 75 + 4 = 4, index 1: x = 1 * 75 + 4 = 79
             //this makes the 8 boxes appear beside each other
 
-            const text = createSvgElement(
-                svg.namespaceURI,
-                "text",
+            const text = createSvgElement(svg.namespaceURI, "text",
                 {
                     x: `${index * digitWidth + digitWidth / 2}`,
                     y: `${Viewport.CANVAS_HEIGHT - 22}`,
@@ -144,15 +147,29 @@ export const render = (): ((state: State) => void) => {
             svg.appendChild(rect);
             svg.appendChild(text);//attach the rectangle and text to the SVG so they appear on the webpage
             return {rect, text,};
-            //save the SVG rectangle and text for this digit
             //digitCells will become roughly:
             //index 0 -> { rect, text }
             //index 1 -> { rect, text }
             //...
         });
 
-        //fixed attributes
-        const targetRect = createSvgElement(svg.namespaceURI, "rect",
+    const gameOverText = createSvgElement(svg.namespaceURI, "text",
+        {
+            x: `${Viewport.CANVAS_WIDTH / 2}`,
+            y: "180",
+            "text-anchor": "middle",
+            "font-family": "monospace",
+            "font-size": "32",
+            fill: "black",
+            visibility: "hidden",
+            "data-fb-game-over": "true",
+        },
+    );
+gameOverText.textContent = "GAME OVER";
+svg.appendChild(gameOverText);
+
+    //fixed attributes
+    const targetRect = createSvgElement(svg.namespaceURI, "rect",
         {
             width: `${Target.WIDTH}`,
             height: `${Target.HEIGHT}`,
@@ -173,26 +190,31 @@ const targetText = createSvgElement( svg.namespaceURI, "text",
 svg.appendChild(targetRect);
 svg.appendChild(targetText);
 //update the SVG cells based on the current state when the state changes
-return (state: State) => { const target = state.allCurrentTargetsInPlay[0];
+return (state: State) => {const target = state.allCurrentTargetsInPlay[0];
 
 //dynamic attributes, which the target rec will move in diff states
 if (target) 
 {
+    show(targetRect);
+    show(targetText);
     targetRect.setAttribute("x", `${target.x}`,);
     targetRect.setAttribute("y", `${target.y}`,); //increase y move target down
     targetText.setAttribute("x", `${target.x + Target.WIDTH / 2}`,);
     targetText.setAttribute("y", `${ target.y + Target.HEIGHT / 2 + 6 }`,);
-    targetText.textContent = target.value.toString(16).toUpperCase();
-}                               //convert decimal to base16(hexa) 
+    targetText.textContent = target.value.toString(16).toUpperCase();//convert decimal to base16(hexa) 
+} else {hide(targetRect); hide(targetText);}     
+                         
     digitCells.forEach(
     ({ rect, text }, index,) => {
     //{ rect, text } gets the SVG elements, index tells us which digit it is
     const bit = state.digitBank[index];
     //state.digitBank is the current 8-bit array, example:[0, 0, 1, 0, 0, 0, 0, 0] if index = 2, state.digitBank[2] = 1
     rect.setAttribute( "fill", bit === 1 ? "#A5D6A7" : "#EF9A9A");
-    text.textContent =`${bit}`;
-    //update the text shown in the SVG, if bit = 0 show "0"; if bit = 1 show "1"
+    text.textContent =`${bit}`; //update the text shown in the SVG, if bit = 0 show "0"; if bit = 1 show "1"
                 },
             );
+
+    gameOverText.setAttribute("visibility",
+    state.gameEnd ? "visible" : "hidden");        
         };
     };

@@ -21,9 +21,8 @@ export const flipBit = (    //flipBit([0,0,0,0,0,0,0,0], 3) => [0,0,0,1,0,0,0,0]
 
 //Convert binary to decimal exp: 00010011 -> 19
 export const digitBankValue = (
-    bank: DigitBank,
-): number =>
-    bank.reduce<number>(
+    bank: DigitBank, //DigitBank = [0,0,1....   ] & this convert the whole array into a numeric value
+): number => bank.reduce<number>(
         (total, bit) => total * 2 + bit, //current total start with 0, then take the bit value*2 + current bit value
         0,
     );
@@ -60,3 +59,25 @@ ReadonlyArray<FallingTargetView> => targets.map(moveTarget); //target becomes ar
         y: 41,
     },
 ]; */
+
+//////////////////
+//Add base line///
+//////////////////
+export const lowestTarget = (targets: ReadonlyArray<FallingTargetView>
+): FallingTargetView | undefined =>
+targets.length === 0 ? undefined :  //length means the length of array if [1,2,3] then length=3
+targets.reduce((lowest, target) => 
+target.y > lowest.y ? target : lowest); //takes y to compare, lowest start from the first array value cuz not initial start
+
+//check if the target touched the bottom line
+export const hasReachedCheckLine = (target: FallingTargetView,)
+: boolean => target.y + Target.HEIGHT >= Constants.CHECK_LINE_Y;
+
+//check if the digitbank value matches the target value
+export const targetMatchesDigitBank = (bank: DigitBank, target: FallingTargetView,
+): boolean => digitBankValue(bank) === target.value;
+
+export const removeTargetById = (
+    targets: ReadonlyArray<FallingTargetView>,
+    id: string,
+): ReadonlyArray<FallingTargetView> => targets.filter(target => target.id !== id);
