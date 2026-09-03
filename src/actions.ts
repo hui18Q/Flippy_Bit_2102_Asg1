@@ -6,7 +6,7 @@ import {Target, Viewport, Constants} from "./constants";
 export class FlipDigit implements Action {
     constructor(public readonly index: number) {}//exp: new FlipDigit(3) => index=3, which means the 4th bit will be flipped
     apply(state: State): State {
-        if (state.gameEnd) {return state;} //if game end dont let user change bit, just return the same state
+        if (state.gameEnd || state.paused) {return state;} //if game end dont let user change bit, just return the same state
         return { //else return a new state with the flipped bit
             ...state,
             digitBank: flipBit( //call the flipbit function to flip bit and return
@@ -19,7 +19,7 @@ export class FlipDigit implements Action {
 
 export class Tick implements Action {
     apply(state: State): State {
-        if (state.gameEnd) { return state; }
+        if (state.gameEnd || state.paused) { return state; } //If the game is over OR the game is paused, Tick does nothing.
 
     const nextElapsedMs = state.elapsedMs + Constants.TICK_RATE_MS;//take the current elapsed game time and add one tick duration to count the new game time after this tick
     const fallSpeed =fallSpeedForElapsedTime(nextElapsedMs); //use that new elapsed time to calculate how fast the targets should fall now.
@@ -53,7 +53,7 @@ export class SpawnTarget implements Action {
     ) {}
 
     apply(state: State): State {
-        if (state.gameEnd) { return state; }
+        if (state.gameEnd || state.paused) { return state; }
 
         const newTarget: FallingTargetView = 
         {
@@ -69,5 +69,12 @@ export class SpawnTarget implements Action {
                 newTarget, //add a new array value : [13, 2F] -> [13, 2F, A1]
             ],
         };
+    }
+}
+
+export class TogglePause implements Action {
+    apply(state: State): State {
+        if (state.gameEnd) {return state;}
+        return { ...state, paused:!state.paused,}; //false → true → false → true...
     }
 }

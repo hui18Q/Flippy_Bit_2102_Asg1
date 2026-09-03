@@ -15,7 +15,7 @@ import {
 } from "rxjs";
 
 import { DIGIT_KEYS, Constants } from "./constants";
-import { FlipDigit, Tick , SpawnTarget} from "./actions";
+import { FlipDigit, Tick , SpawnTarget, TogglePause,} from "./actions";
 import { Action } from "./types";
 
 //takes no argument because because the event target (document) and action logic are fixed
@@ -49,3 +49,11 @@ export const mouseFlipDigit$ =
 export const restart$ =
     (): Observable<KeyboardEvent> => fromEvent<KeyboardEvent>(document,"keydown")
     .pipe( filter(event => event.code === "KeyR"), );
+
+export const pause$ =(): Observable<Action> =>
+        fromEvent<KeyboardEvent>( document, "keydown",
+        ).pipe(
+            filter(event =>event.code ==="KeyP"),
+            map(() =>new TogglePause(),
+            ),
+        );
