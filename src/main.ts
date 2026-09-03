@@ -24,7 +24,7 @@ import {
     merge
 } from "rxjs";
 
-import { flipDigit$, tick$, spawn$} from "./observables";
+import { flipDigit$, tick$, spawn$, mouseFlipDigit$, restart$} from "./observables";
 import { initialState, reduceState } from "./state";
 import { State } from "./types";
 import { render } from "./view";
@@ -37,7 +37,7 @@ import { render } from "./view";
 
 ///define state$()     return observable of state
 export const state$ = (): Observable<State> => {
-return merge(tick$(), flipDigit$(), spawn$(),).pipe( //merge to get one action stream that conluded all actions
+return merge(tick$(), flipDigit$(), spawn$(), mouseFlipDigit$()).pipe( //merge to get one action stream that conluded all actions
         scan(reduceState, initialState), //scan start at initialState and call reduceState when any actionis emmited
         startWith(initialState), //so when game start, 00000000 will be displayed, then when user press key 1-8, the corresponding bit will be flipped and new state will be displayed
     );
@@ -50,8 +50,9 @@ if (typeof window !== "undefined") {
     .pipe(take(1)); //take(1) means only take the first emitted value, then stop listening.
 
     click$
-        .pipe(switchMap(() => state$()),)
+        .pipe(switchMap(() => restart$() //restart direct enter inner pipe for the first click
+        .pipe(startWith(null), switchMap(() => state$()),),),) //startwith null for the first start game
         .subscribe(render());
     //after the first click, switch to the state$() Observable.
-    //subscribe listens to every State emitted by state$() and passes the State to render() to update the SVG.
+  //subscribe listens to every State emitted by state$() and passes the State to render() to update the SVG.
 }

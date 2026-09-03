@@ -7,7 +7,9 @@ export type DigitBank = ReadonlyArray<Bit>;
 export type State = Readonly<{ //create a ts type called state, Readonly means cannot change this state, but can create a new state using {...state, gameEnd:true}
     digitBank: DigitBank; //the style 'state' must contain digitBank, which is an array of 0/1, so should be digitBank: [0,0,0,0,0,0,0,0]
     allCurrentTargetsInPlay: ReadonlyArray<FallingTargetView>; // an array of FallingTargetView, allCurrentTargetsInPlay: [FallingTargetView,FallingTargetView,...]
-    gameEnd: boolean; //is a boolean, so should be gameEnd: true/false
+    gameEnd: boolean; // gameEnd: true/false
+    score: number;
+    elapsedMs: number; //how long this game has been running
 }>;
 
 //Any Action must have a function apply, Action: FlipDigit/Tick/Spawntarget/Restart
