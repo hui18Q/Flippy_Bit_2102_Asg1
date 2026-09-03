@@ -4,11 +4,9 @@ import {Target, Viewport} from "./constants";
 
 //create a class
 export class FlipDigit implements Action {
-    constructor(public readonly index: number) {}
-    //exp: new FlipDigit(3) => index=3, which means the 4th bit will be flipped
+    constructor(public readonly index: number) {}//exp: new FlipDigit(3) => index=3, which means the 4th bit will be flipped
     apply(state: State): State {
         if (state.gameEnd) {return state;} //if game end dont let user change bit, just return the same state
-
         return { //else return a new state with the flipped bit
             ...state,
             digitBank: flipBit( //call the flipbit function to flip bit and return
