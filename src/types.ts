@@ -10,6 +10,7 @@ export type State = Readonly<{ //create a ts type called state, Readonly means c
     gameEnd: boolean; // gameEnd: true/false
     score: number;
     elapsedMs: number; //how long this game has been running
+    paused: boolean;
 }>;
 
 //Any Action must have a function apply, Action: FlipDigit/Tick/Spawntarget/Restart

@@ -7,7 +7,8 @@ export const initialState: State = {
     allCurrentTargetsInPlay: [], //not value cuz targets will be created by spawn$
     gameEnd: false,    
     score: 0,       
-    elapsedMs: 0,               
+    elapsedMs: 0,      
+    paused: false         
 };
 
 //create function flipbit, takes bank & index as parameters, return type DigitBank(array), which produced by 

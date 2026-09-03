@@ -165,14 +165,26 @@ export const render = (): ((state: State) => void) => {
         gameOverText.textContent = "GAME OVER";
         svg.appendChild(gameOverText);
 
+        const pausedText = createSvgElement(svg.namespaceURI, "text",
+        {
+            x: `${ Viewport.CANVAS_WIDTH / 2 }`,
+            y: "220",
+            "text-anchor": "middle",
+            "font-family": "monospace",
+            "font-size": "28",
+            fill: "black",
+            visibility: "hidden",
+            "data-fb-paused": "true",
+        },
+    );
+pausedText.textContent = "PAUSED";
+svg.appendChild(pausedText);
+
        const targetNodes = new Map<string,{rect: SVGElement; text: SVGElement;}>();
        const getTargetNode = (target: FallingTargetView,): 
        { rect: SVGElement;text: SVGElement;} => 
-        {
-
-        const existing = targetNodes.get(target.id);//if yes just reuse
+        { const existing = targetNodes.get(target.id);//if yes just reuse
         if (existing) {return existing;}    
-
             // If no, create the target rectangle
     const rect = createSvgElement(svg.namespaceURI, "rect",
             {
@@ -232,7 +244,10 @@ const activeTargetIds = new Set(state.allCurrentTargetsInPlay.map(target => targ
 
     gameOverText.setAttribute("visibility",
     state.gameEnd ? "visible" : "hidden");        
-    
+    pausedText.setAttribute("visibility",
+    state.paused? "visible": "hidden",);
     scoreText.textContent =`${state.score}`;};
 };
+
+
 
