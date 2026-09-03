@@ -4,8 +4,8 @@ import { Target, Viewport, Constants } from "./constants";
 //a object with type (state) create starting state,  and is the actual starting game (actual value) instead of a blueprint
 export const initialState: State = {
     digitBank: [0, 0, 0, 0, 0, 0, 0, 0],
-    allCurrentTargetsInPlay: [{ id: "target-0", value: 0x13, x: Viewport.CANVAS_WIDTH/2 - Target.WIDTH/2, y: 40 }], //initially no targets in play, so the array is empty
-    gameEnd: false,                            //hexadecimal          /2 to center the target, x=268
+    allCurrentTargetsInPlay: [], //not value cuz targets will be created by spawn$
+    gameEnd: false,                           
 };
 
 //create function flipbit, takes bank & index as parameters, return type DigitBank(array), which produced by 

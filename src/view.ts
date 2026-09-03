@@ -1,5 +1,5 @@
 import {Constants, Target, Viewport} from "./constants";
-import { State } from "./types";
+import { State, FallingTargetView } from "./types";
 
 // Rendering (side effects) define SVG helper functions, which will appear on the webpage
 /**
@@ -116,32 +116,30 @@ export const render = (): ((state: State) => void) => {
             //  { rect, text },
             //  ...]
 
-            const rect = createSvgElement(svg.namespaceURI, "rect",
-                {
-                    x: `${index * digitWidth + 4}`,
-                    y: `${Viewport.CANVAS_HEIGHT -50}`,
-                    width: `${digitWidth - 8}`,
-                    height: "40",
-                    fill: "#EF9A9A",
-                    stroke: "black",
-                    "stroke-width": "2",
-                    "data-fb-digit-index": `${index}`,
-                },
-            );
+        const rect = createSvgElement(svg.namespaceURI, "rect",
+            {
+                x: `${index * digitWidth + 4}`,
+                y: `${Viewport.CANVAS_HEIGHT -50}`,
+                width: `${digitWidth - 8}`,
+                height: "40",
+                fill: "#EF9A9A",
+                stroke: "black",
+                "stroke-width": "2",
+                "data-fb-digit-index": `${index}`,
+            },);
             //create one SVG rectangle for one bit
             //index 0: x = 0 * 75 + 4 = 4, index 1: x = 1 * 75 + 4 = 79
             //this makes the 8 boxes appear beside each other
 
-            const text = createSvgElement(svg.namespaceURI, "text",
-                {
-                    x: `${index * digitWidth + digitWidth / 2}`,
-                    y: `${Viewport.CANVAS_HEIGHT - 22}`,
-                    "text-anchor": "middle",
-                    "font-family": "monospace",
-                    fill: "black",
-                    "data-fb-digit-index": `${index}`,
-                },
-            );//create the SVG text that will appear inside each rectangle
+        const text = createSvgElement(svg.namespaceURI, "text",
+            {
+                x: `${index * digitWidth + digitWidth / 2}`,
+                y: `${Viewport.CANVAS_HEIGHT - 22}`,
+                "text-anchor": "middle",
+                "font-family": "monospace",
+                fill: "black",
+                "data-fb-digit-index": `${index}`,
+            },);//create the SVG text that will appear inside each rectangle
 
             text.textContent = "0"; //initial visual value for every bit is 0
             svg.appendChild(rect);
@@ -153,66 +151,81 @@ export const render = (): ((state: State) => void) => {
             //...
         });
 
-    const gameOverText = createSvgElement(svg.namespaceURI, "text",
-        {
-            x: `${Viewport.CANVAS_WIDTH / 2}`,
-            y: "180",
-            "text-anchor": "middle",
-            "font-family": "monospace",
-            "font-size": "32",
-            fill: "black",
-            visibility: "hidden",
-            "data-fb-game-over": "true",
-        },
-    );
-gameOverText.textContent = "GAME OVER";
-svg.appendChild(gameOverText);
+        const gameOverText = createSvgElement(svg.namespaceURI, "text",
+            {
+                x: `${Viewport.CANVAS_WIDTH / 2}`,
+                y: "180",
+                "text-anchor": "middle",
+                "font-family": "monospace",
+                "font-size": "32",
+                fill: "black",
+                visibility: "hidden",
+                "data-fb-game-over": "true",
+            },);
+        gameOverText.textContent = "GAME OVER";
+        svg.appendChild(gameOverText);
 
-    //fixed attributes
-    const targetRect = createSvgElement(svg.namespaceURI, "rect",
+        const targetNodes = new Map<string,{rect: SVGElement; text: SVGElement;}>();
+        const getTargetNode = (target: FallingTargetView)
+        : {rect: SVGElement; text: SVGElement;} => {const existing = targetNodes.get(target.id);
+        
+        if (existing) {return existing;} //if yes just reuse
+        const rect = createSvgElement(svg.namespaceURI, "rect", //if no just create
         {
             width: `${Target.WIDTH}`,
             height: `${Target.HEIGHT}`,
-            rx: "6", //horizontal radius
+            rx: "6",
             fill: "white",
             stroke: "black",
             "stroke-width": "2",
-        },
-    );
+            "data-fb-target-id": target.id,
+        },);
 
-const targetText = createSvgElement( svg.namespaceURI, "text",
+        const text = createSvgElement(svg.namespaceURI, "text",
         {
             "text-anchor": "middle",
             "font-family": "monospace",
              fill: "black",
-        },
-    );
-svg.appendChild(targetRect);
-svg.appendChild(targetText);
-//update the SVG cells based on the current state when the state changes
-return (state: State) => {const target = state.allCurrentTargetsInPlay[0];
+            "data-fb-target-id": target.id,
+        },);
 
-//dynamic attributes, which the target rec will move in diff states
-if (target) 
-{
-    show(targetRect);
-    show(targetText);
-    targetRect.setAttribute("x", `${target.x}`,);
-    targetRect.setAttribute("y", `${target.y}`,); //increase y move target down
-    targetText.setAttribute("x", `${target.x + Target.WIDTH / 2}`,);
-    targetText.setAttribute("y", `${ target.y + Target.HEIGHT / 2 + 6 }`,);
-    targetText.textContent = target.value.toString(16).toUpperCase();//convert decimal to base16(hexa) 
-} else {hide(targetRect); hide(targetText);}     
+    svg.appendChild(rect);
+    svg.appendChild(text);
+
+    const created = {rect, text};
+    targetNodes.set( target.id, created);
+
+    return created;
+};
+
+//update the SVG cells based on the current state when the state changes
+return (state: State) => {
+    state.allCurrentTargetsInPlay.forEach(target => {
+        const {rect, text} = getTargetNode(target);
+        rect.setAttribute("x",`${target.x}`,);
+        rect.setAttribute("y",`${target.y}`,);
+        text.setAttribute("x", `${target.x + Target.WIDTH / 2}`,);
+        text.setAttribute("y", `${target.y + Target.HEIGHT / 2 + 6}`,);
+        text.textContent = target.value.toString(16).toUpperCase();
+    });
+
+    // a variable stores a set of target id
+const activeTargetIds = new Set(state.allCurrentTargetsInPlay.map(target => target.id),); //takes whole target can return only the id, new set turns array ["id"] into {"id"}
+
+    targetNodes.forEach(({ rect, text }, id) => {
+        if (!activeTargetIds.has(id)) //has is used with set/map to check whether the id exist
+        {
+            rect.remove();
+            text.remove();
+            targetNodes.delete(id);
+        }
+    },);   
                          
     digitCells.forEach(
-    ({ rect, text }, index,) => {
-    //{ rect, text } gets the SVG elements, index tells us which digit it is
-    const bit = state.digitBank[index];
-    //state.digitBank is the current 8-bit array, example:[0, 0, 1, 0, 0, 0, 0, 0] if index = 2, state.digitBank[2] = 1
+    ({ rect, text }, index,) => {//{ rect, text } gets the SVG elements, index tells us which digit it is
+    const bit = state.digitBank[index]; //state.digitBank is the current 8-bit array, example:[0, 0, 1, 0, 0, 0, 0, 0] if index = 2, state.digitBank[2] = 1
     rect.setAttribute( "fill", bit === 1 ? "#A5D6A7" : "#EF9A9A");
-    text.textContent =`${bit}`; //update the text shown in the SVG, if bit = 0 show "0"; if bit = 1 show "1"
-                },
-            );
+    text.textContent =`${bit}`;},)//update the text shown in the SVG, if bit = 0 show "0"; if bit = 1 show "1"
 
     gameOverText.setAttribute("visibility",
     state.gameEnd ? "visible" : "hidden");        

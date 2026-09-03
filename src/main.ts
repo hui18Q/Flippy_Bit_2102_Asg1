@@ -24,7 +24,7 @@ import {
     merge
 } from "rxjs";
 
-import { flipDigit$, tick$ } from "./observables";
+import { flipDigit$, tick$, spawn$} from "./observables";
 import { initialState, reduceState } from "./state";
 import { State } from "./types";
 import { render } from "./view";
@@ -37,8 +37,8 @@ import { render } from "./view";
 
 ///define state$()     return observable of state
 export const state$ = (): Observable<State> => {
-return merge(tick$(), flipDigit$()).pipe(
-        scan(reduceState, initialState),//scan start at initialState and call reduceState when any actionis emmited
+return merge(tick$(), flipDigit$(), spawn$(),).pipe( //merge to get one action stream that conluded all actions
+        scan(reduceState, initialState), //scan start at initialState and call reduceState when any actionis emmited
         startWith(initialState), //so when game start, 00000000 will be displayed, then when user press key 1-8, the corresponding bit will be flipped and new state will be displayed
     );
 };
