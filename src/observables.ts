@@ -4,10 +4,6 @@ import {
     interval,
     map,
     Observable,
-    concatMap, //do 1by1
-    delay,
-    from, //same as of, but will unwrap iterables
-    of, //wraps static data into observable stream, if give array will treat as single delivery
     defer, //Create observable when someone subscribe
     repeat, //when observable complete, subscribe again
     timer, //similar to interval, but wait 1 sec -> emit -> complete
