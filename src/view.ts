@@ -206,7 +206,7 @@ return (state: State) => {
         rect.setAttribute("y",`${target.y}`,);
         text.setAttribute("x", `${target.x + Target.WIDTH / 2}`,);
         text.setAttribute("y", `${target.y + Target.HEIGHT / 2 + 6}`,);
-        text.textContent = target.value.toString(16).toUpperCase();
+        text.textContent = target.value.toString(16).toUpperCase().padStart(2, "0"); //padStart convert 1 character to 2 8->08
     });
 
     // a variable stores a set of target id

@@ -28,7 +28,7 @@ export const flipDigit$ = (): Observable<Action> =>
 export const tick$ = (): Observable<Action> =>interval(Constants.TICK_RATE_MS,)
 .pipe(map(() => new Tick()),);
 
-const DEMO_TARGET_VALUES: ReadonlyArray<number> = [0x13, 0x2F, 0x08]; //hard code forminimal game
-export const spawn$ =(): Observable<Action> => from(DEMO_TARGET_VALUES) //from convert array to observable : [12, 2F, 08] -> 12 -> 2A -> 08
-.pipe(concatMap((value, index) => of(new SpawnTarget(`target-${index}`, value,),) //concatmap atkes the value 1by1, then new spawntarget create, then of wrap into another observable
-.pipe(delay( Constants.DEMO_SPAWN_INTERVAL_MS,),),),); //wait 1.5 sec bfr emit
+export const spawn$ =(): Observable<Action> => interval(Constants.DEMO_SPAWN_INTERVAL_MS)//produce every 1.5sec overtime
+.pipe( map(index => new SpawnTarget( `target-${index}`, randomTargetValue(), ),),);
+
+const randomTargetValue = (): number => Math.floor(Math.random() * 256); //math.random returns random decimal 0-1, then *256 to become 46.95 to 255. ect, then math.floor remove decimal part

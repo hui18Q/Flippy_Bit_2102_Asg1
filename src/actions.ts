@@ -59,17 +59,16 @@ export class SpawnTarget implements Action {
     apply(state: State): State {
         if (state.gameEnd) { return state; }
 
-        const newTarget:
-            FallingTargetView = {
+        const newTarget: FallingTargetView = 
+        {
             id: this.id,
             value: this.value,
             x: Viewport.CANVAS_WIDTH / 2 - Target.WIDTH / 2,//make the target appear in middle right
             y: -Target.HEIGHT, //start from above the visible screen
         };
 
-        return {
-            ...state,
-            allCurrentTargetsInPlay: [
+        return {...state, allCurrentTargetsInPlay: 
+            [
                 ...state.allCurrentTargetsInPlay,
                 newTarget, //add a new array value : [13, 2F] -> [13, 2F, A1]
             ],
