@@ -7,7 +7,11 @@ import {
     concatMap, //do 1by1
     delay,
     from, //same as of, but will unwrap iterables
-    of //wraps static data into observable stream, if give array will treat as single delivery
+    of, //wraps static data into observable stream, if give array will treat as single delivery
+    defer, //Create observable when someone subscribe
+    repeat, //when observable complete, subscribe again
+    timer, //similar to interval, but wait 1 sec -> emit -> complete
+    scan,
 } from "rxjs";
 
 import { DIGIT_KEYS, Constants } from "./constants";
@@ -28,7 +32,11 @@ export const flipDigit$ = (): Observable<Action> =>
 export const tick$ = (): Observable<Action> =>interval(Constants.TICK_RATE_MS,)
 .pipe(map(() => new Tick()),);
 
-export const spawn$ =(): Observable<Action> => interval(Constants.DEMO_SPAWN_INTERVAL_MS)//produce every 1.5sec overtime
-.pipe( map(index => new SpawnTarget( `target-${index}`, randomTargetValue(), ),),);
+const randomTargetValue = (): number => Math.floor(Math.random() * 256); //*256 to get value from 46-255
 
-const randomTargetValue = (): number => Math.floor(Math.random() * 256); //math.random returns random decimal 0-1, then *256 to become 46.95 to 255. ect, then math.floor remove decimal part
+export const spawn$ = (): Observable<Action> => defer(() =>timer(randomSpawnDelay(),),)
+.pipe(repeat(), 
+      scan( targetIndex => targetIndex + 1, -1), //start from -1, so the target index become 0 and enter map, and next loop when timer produce 0, scan rmb the targetIndex is 0, will +q become 1
+      map(index =>new SpawnTarget(`target-${index}`,randomTargetValue(),), ),);
+
+const randomSpawnDelay = (): number => 1000 + Math.floor(Math.random() * 2001); //math.random returns random decimal 0-1, then *2001 to become 0-2000. ect, then math.floor remove decimal part and add 1000 = 1000-3000(1-3sec)
