@@ -18,7 +18,10 @@ export const Constants = {
     TICK_RATE_MS: 16, //  One tick every 16 milliseconds (~62.5 FPS)/62 ticks per sec
     FALL_SPEED: 1, // 1 pixel per tick, adds 1 pixel to the target's y position
     CHECK_LINE_Y: 300, //check line y position
-    DEMO_SPAWN_INTERVAL_MS: 1500 //1.5sec per spawn
+    SPEED_UP_EVERY_MS: 10000, //increase every 10 sec
+    SPEED_INCREMENT: 0.5, //increase 0.5speed fo reach increase
+    MAX_FALL_SPEED: 4, 
+    
 } as const;
 
 //DIGIT_KEYS is an array of strings representing the valid keyboard ks for digits 1 to 8.

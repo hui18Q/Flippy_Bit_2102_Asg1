@@ -9,6 +9,7 @@ export type State = Readonly<{ //create a ts type called state, Readonly means c
     allCurrentTargetsInPlay: ReadonlyArray<FallingTargetView>; // an array of FallingTargetView, allCurrentTargetsInPlay: [FallingTargetView,FallingTargetView,...]
     gameEnd: boolean; // gameEnd: true/false
     score: number;
+    elapsedMs: number; //how long this game has been running
 }>;
 
 //Any Action must have a function apply, Action: FlipDigit/Tick/Spawntarget/Restart

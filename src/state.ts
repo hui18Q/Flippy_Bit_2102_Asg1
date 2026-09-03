@@ -6,7 +6,8 @@ export const initialState: State = {
     digitBank: [0, 0, 0, 0, 0, 0, 0, 0],
     allCurrentTargetsInPlay: [], //not value cuz targets will be created by spawn$
     gameEnd: false,    
-    score: 0,                       
+    score: 0,       
+    elapsedMs: 0,               
 };
 
 //create function flipbit, takes bank & index as parameters, return type DigitBank(array), which produced by 
@@ -38,14 +39,14 @@ export const reduceState = (
 //add movement function to state//
 //////////////////////////////////
 
-export const moveTarget = (target: FallingTargetView): FallingTargetView => 
+export const moveTarget = (target: FallingTargetView, fallSpeed: number): FallingTargetView => 
 ({
     ...target,
-    y: target.y + Constants.FALL_SPEED,
+    y: target.y + fallSpeed,
 }); //target is object
 
-export const moveAllTargets = (targets: ReadonlyArray<FallingTargetView>):       
-ReadonlyArray<FallingTargetView> => targets.map(moveTarget); //target becomes array
+export const moveAllTargets = (targets: ReadonlyArray<FallingTargetView>, fallSpeed: number):       
+ReadonlyArray<FallingTargetView> => targets.map(target => moveTarget(target, fallSpeed)); //target becomes array
 /*targets = [
     {
         id: "target-0",
@@ -58,8 +59,7 @@ ReadonlyArray<FallingTargetView> => targets.map(moveTarget); //target becomes ar
         value: 47,
         x: 200,
         y: 41,
-    },
-]; */
+    },]; */
 
 //////////////////
 //Add base line///
@@ -88,3 +88,9 @@ export const removeTargetById = (
 //////////////////////////////////////////////////
 export const removeTargetsOutsideCanvas = (targets: ReadonlyArray<FallingTargetView>)
 : ReadonlyArray<FallingTargetView> => targets.filter( target => target.y <= Viewport.CANVAS_HEIGHT);
+
+export const fallSpeedForElapsedTime = (elapsedMs: number): 
+number =>Math.min(
+        Constants.FALL_SPEED + Math.floor(elapsedMs / Constants.SPEED_UP_EVERY_MS) * Constants.SPEED_INCREMENT, //formula:currentSpeed=baseSpeed+⌊speedUpInterval/elapsedTime​⌋×speedIncrement
+        Constants.MAX_FALL_SPEED, //to ensure the game speed wont excees 4pixels per tick
+    );
