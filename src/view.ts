@@ -90,7 +90,7 @@ export const render = (): ((state: State) => void) => {
         //viewBox = "0 0 600 400" , defines the position and dimensions of the SVG canvas
         svg.setAttribute( "viewBox", `0 0 ${Viewport.CANVAS_WIDTH} ${Viewport.CANVAS_HEIGHT}`,);
         
-        
+
         const checkLine = createSvgElement( svg.namespaceURI, "line",
     {
         x1: "0",   //x1,y1=startline; x2y2=endline
@@ -165,22 +165,26 @@ export const render = (): ((state: State) => void) => {
         gameOverText.textContent = "GAME OVER";
         svg.appendChild(gameOverText);
 
-        const targetNodes = new Map<string,{rect: SVGElement; text: SVGElement;}>();
-        const getTargetNode = (target: FallingTargetView)
-        : {rect: SVGElement; text: SVGElement;} => {const existing = targetNodes.get(target.id);
-        
-        if (existing) {return existing;} //if yes just reuse
-        const rect = createSvgElement(svg.namespaceURI, "rect", //if no just create
+       const targetNodes = new Map<string,{rect: SVGElement; text: SVGElement;}>();
+       const getTargetNode = (target: FallingTargetView,): 
+       { rect: SVGElement;text: SVGElement;} => 
         {
-            width: `${Target.WIDTH}`,
-            height: `${Target.HEIGHT}`,
-            rx: "6",
-            fill: "white",
-            stroke: "black",
-            "stroke-width": "2",
-            "data-fb-target-id": target.id,
-        },);
 
+        const existing = targetNodes.get(target.id);//if yes just reuse
+        if (existing) {return existing;}    
+
+            // If no, create the target rectangle
+    const rect = createSvgElement(svg.namespaceURI, "rect",
+            {
+                width:`${Target.WIDTH}`,
+                height:`${Target.HEIGHT}`,
+                rx:"6",
+                fill:"white",
+                stroke:"black",
+                "stroke-width":"2",
+                "data-fb-target-id":target.id,
+            },
+        );
         const text = createSvgElement(svg.namespaceURI, "text",
         {
             "text-anchor": "middle",
@@ -193,7 +197,7 @@ export const render = (): ((state: State) => void) => {
     svg.appendChild(text);
 
     const created = {rect, text};
-    targetNodes.set( target.id, created);
+    targetNodes.set( target.id, created); // Save them using target.id
     return created;};
 
 
