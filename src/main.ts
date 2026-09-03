@@ -24,7 +24,7 @@ import {
     merge
 } from "rxjs";
 
-import { flipDigit$, tick$, spawn$, mouseFlipDigit$} from "./observables";
+import { flipDigit$, tick$, spawn$, mouseFlipDigit$, restart$} from "./observables";
 import { initialState, reduceState } from "./state";
 import { State } from "./types";
 import { render } from "./view";
@@ -50,8 +50,9 @@ if (typeof window !== "undefined") {
     .pipe(take(1)); //take(1) means only take the first emitted value, then stop listening.
 
     click$
-        .pipe(switchMap(() => state$()),)
+        .pipe(switchMap(() => restart$() //restart direct enter inner pipe for the first click
+        .pipe(startWith(null), switchMap(() => state$()),),),) //startwith null for the first start game
         .subscribe(render());
     //after the first click, switch to the state$() Observable.
-    //subscribe listens to every State emitted by state$() and passes the State to render() to update the SVG.
+  //subscribe listens to every State emitted by state$() and passes the State to render() to update the SVG.
 }

@@ -45,3 +45,7 @@ export const mouseFlipDigit$ =
            filter(index => index >= 0), //remove invalid clicks
            map(index => new FlipDigit(index),),
         );
+
+export const restart$ =
+    (): Observable<KeyboardEvent> => fromEvent<KeyboardEvent>(document,"keydown")
+    .pipe( filter(event => event.code === "KeyR"), );
