@@ -5,7 +5,8 @@ import { Target, Viewport, Constants } from "./constants";
 export const initialState: State = {
     digitBank: [0, 0, 0, 0, 0, 0, 0, 0],
     allCurrentTargetsInPlay: [], //not value cuz targets will be created by spawn$
-    gameEnd: false,                           
+    gameEnd: false,    
+    score: 0,                       
 };
 
 //create function flipbit, takes bank & index as parameters, return type DigitBank(array), which produced by 

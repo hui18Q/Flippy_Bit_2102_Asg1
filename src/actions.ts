@@ -37,8 +37,9 @@ export class Tick implements Action {
         if (targetMatchesDigitBank(state.digitBank, lowest)) 
         {
             return {...state, 
-                    allCurrentTargetsInPlay: removeTargetById( movedTargets, lowest.id),};
-        }           //correct answer: remove that target
+                    allCurrentTargetsInPlay: removeTargetById( movedTargets, lowest.id),
+                    score: state.score + 1,};
+        }           //correct answer: remove that target & score + 1
 
         //wrong answer:end the game
         return {

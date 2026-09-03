@@ -86,7 +86,7 @@ export const render = (): ((state: State) => void) => {
         const svg = document.querySelector("#svgCanvas") as SVGSVGElement;
         //document.querySelector("#svgCanvas") finds the first element in the document with the id of "svgCanvas"
         //save it as a type SVGSVGElement : <svg> element
-
+        const scoreText = document.querySelector("#scoreText") as HTMLElement;
         //viewBox = "0 0 600 400" , defines the position and dimensions of the SVG canvas
         svg.setAttribute( "viewBox", `0 0 ${Viewport.CANVAS_WIDTH} ${Viewport.CANVAS_HEIGHT}`,);
         
@@ -194,9 +194,8 @@ export const render = (): ((state: State) => void) => {
 
     const created = {rect, text};
     targetNodes.set( target.id, created);
+    return created;};
 
-    return created;
-};
 
 //update the SVG cells based on the current state when the state changes
 return (state: State) => {
@@ -229,5 +228,7 @@ const activeTargetIds = new Set(state.allCurrentTargetsInPlay.map(target => targ
 
     gameOverText.setAttribute("visibility",
     state.gameEnd ? "visible" : "hidden");        
-        };
-    };
+    
+    scoreText.textContent =`${state.score}`;};
+};
+
