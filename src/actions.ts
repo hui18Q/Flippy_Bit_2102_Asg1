@@ -19,7 +19,8 @@ export class FlipDigit implements Action {
     constructor(public readonly index: number) {}
 
     apply(state: State): State {
-        return state.gameEnd || state.paused // Ignore player input while the game is paused or finished.
+        // Ignore player input while the game is paused or finished.
+        return state.gameEnd || state.paused
             ? state
             : {
                   ...state,

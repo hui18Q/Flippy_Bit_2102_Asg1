@@ -221,7 +221,7 @@ export const render = (): ((state: State) => void) => {
             text.textContent = `${bit}`;
         });
 
-        // Reuse the starter #gameOver overlay rather than creating a duplicate node.
+        // Reuse the starter #gameOver overlay instead of a duplicate node.
         state.gameEnd ? show(gameOver) : hide(gameOver);
 
         // Pause is a custom feature, so its visibility follows state.paused.

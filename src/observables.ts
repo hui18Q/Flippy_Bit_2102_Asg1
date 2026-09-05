@@ -46,19 +46,19 @@ const randomSpawnDelay = (): number => 1000 + Math.floor(Math.random() * 2001);
  * bonus status for each spawn cycle.
  */
 export const spawn$ = (): Observable<Action> =>
-    defer(() => timer(randomSpawnDelay())) // defer recalculates the random delay for every new spawn cycle.
-        .pipe(
-            repeat(),
-            scan(targetIndex => targetIndex + 1, -1),
-            map(
-                index =>
-                    new SpawnTarget(
-                        `target-${index}`,
-                        randomTargetValue(),
-                        randomBonus(),
-                    ),
-            ),
-        );
+    // defer recalculates the random delay for every new spawn cycle.
+    defer(() => timer(randomSpawnDelay())).pipe(
+        repeat(),
+        scan(targetIndex => targetIndex + 1, -1),
+        map(
+            index =>
+                new SpawnTarget(
+                    `target-${index}`,
+                    randomTargetValue(),
+                    randomBonus(),
+                ),
+        ),
+    );
 
 /**
  * Converts clicks on DigitBank SVG elements into FlipDigit Actions.

@@ -1,15 +1,7 @@
 /**
- * Inside this file you will use the classes and functions from rx.js
- * to add visuals to the svg element in index.html, animate them, and make them interactive.
- *
- * Study and complete the tasks in observable exercises first to get ideas.
- *
- * Course Notes showing Asteroids in FRP: https://tgdwyer.github.io/asteroids/
- *
- * You will be marked on your functional programming style
- * as well as the functionality that you implement.
- *
- * Document your code!
+ * Entry point: wires every Observable stream into the single state$
+ * pipeline and subscribes render() to it. This is the only file that
+ * starts a subscription; every other file stays pure.
  */
 
 import "./style.css";
@@ -37,9 +29,10 @@ import { State } from "./types";
 import { render } from "./view";
 
 /**
- *Creates the Observable that stores and updates the game state.
- *Combines all gameplay Actions and accumulates them into immutable State.
- *State using merge() and scan().
+ * Creates the Observable that stores and updates the game state.
+ * Combines all gameplay Actions and accumulates them into immutable State,
+ * using merge() and scan().
+ *
  * @returns Observable of State
  */
 export const state$ = (): Observable<State> => {
@@ -54,7 +47,7 @@ export const state$ = (): Observable<State> => {
 
 /**
  * The first click starts the game.
- * Pressing R replaces it with a fresh State$ stream without refreshing the browser.
+ * Pressing R replaces it with a fresh State$ stream without page reload.
  */
 if (typeof window !== "undefined") {
     // The first click activates the game; R starts a fresh State stream.
