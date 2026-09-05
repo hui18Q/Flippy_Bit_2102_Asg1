@@ -1,8 +1,16 @@
+/**
+ * One binary digit controlled by the player.
+ */
 export type Bit = 0 | 1;
 
+/**
+ * Immutable 8-bit representation of the player's current answer.
+ */
 export type DigitBank = ReadonlyArray<Bit>;
 
-// State is immutable; Actions create a new State instead of mutating this one.
+/**
+ * Complete immutable game State accumulated by the State Observable.
+ */
 export type State = Readonly<{
     digitBank: DigitBank;
     allCurrentTargetsInPlay: ReadonlyArray<FallingTargetView>;
@@ -13,11 +21,16 @@ export type State = Readonly<{
     healthReserve: number;
 }>;
 
-// Every game event transforms the current State into the next State.
+/**
+ * Contract implemented by events that transform one State into the next.
+ */
 export interface Action {
     apply(state: State): State;
 }
 
+/**
+ * Runtime data needed to update and render one falling target.
+ */
 export type FallingTargetView = Readonly<{
     id: string;
     value: number;

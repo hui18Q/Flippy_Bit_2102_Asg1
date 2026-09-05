@@ -37,11 +37,11 @@ import { State } from "./types";
 import { render } from "./view";
 
 /**
- * Creates the Observable that stores and updates the game state.
- *
+ *Creates the Observable that stores and updates the game state.
+ *Combines all gameplay Actions and accumulates them into immutable State.
+ *State using merge() and scan().
  * @returns Observable of State
  */
-//Combines all gameplay Actions and accumulates them into immutable State.
 export const state$ = (): Observable<State> => {
     return merge(
         tick$(),
@@ -52,10 +52,13 @@ export const state$ = (): Observable<State> => {
     ).pipe(scan(reduceState, initialState), startWith(initialState));
 };
 
+/**
+ * The first click starts the game.
+ * Pressing R replaces it with a fresh State$ stream without refreshing the browser.
+ */
 if (typeof window !== "undefined") {
     // The first click activates the game; R starts a fresh State stream.
-    const click$ = fromEvent(document.body, "mousedown") 
-        .pipe(take(1));
+    const click$ = fromEvent(document.body, "mousedown").pipe(take(1));
 
     click$
         .pipe(

@@ -11,7 +11,10 @@ import {
 import { Action, State, FallingTargetView } from "./types";
 import { Target, Viewport, Constants } from "./constants";
 
-//create a class
+/**
+ * Represents a player request to flip one binary digit.
+ * Input is ignored while the game is paused or finished.
+ */
 export class FlipDigit implements Action {
     constructor(public readonly index: number) {}
 
@@ -25,7 +28,11 @@ export class FlipDigit implements Action {
     }
 }
 
-// Resolve the lowest target once it reaches the check line.
+/**
+ * Resolves the lowest target after it reaches the check line.
+ * A correct match removes the target and updates the score; an incorrect
+ * match ends the game.
+ */
 const resolveReachedTarget = (
     state: State,
     movedState: State,
@@ -48,6 +55,10 @@ const resolveReachedTarget = (
               gameEnd: true,
           };
 
+/**
+ * Checks whether the current lowest target is ready to be resolved.
+ * Higher targets remain ignored until the lowest one is resolved.
+ */
 const resolveLowestTarget = (
     state: State,
     movedState: State,
@@ -60,6 +71,10 @@ const resolveLowestTarget = (
         : resolveReachedTarget(state, movedState, movedTargets, lowest);
 };
 
+/**
+ * Advances one active game tick by updating elapsed time, moving targets,
+ * removing obsolete targets and resolving the lowest target if necessary.
+ */
 const applyActiveTick = (state: State): State => {
     const nextElapsedMs = state.elapsedMs + Constants.TICK_RATE_MS;
 
@@ -78,13 +93,21 @@ const applyActiveTick = (state: State): State => {
     return resolveLowestTarget(state, movedState, movedTargets);
 };
 
+/**
+ * Represents one timer tick of the game.
+ * Paused or finished games return the existing State unchanged.
+ */
 export class Tick implements Action {
     apply(state: State): State {
-        // Pausing freezes movement and elapsed game time.
+        //Pausing freezes movement and elapsed game time.
         return state.gameEnd || state.paused ? state : applyActiveTick(state);
     }
 }
 
+/**
+ * Adds a newly generated falling target to the active target list.
+ * Spawn actions are ignored while gameplay is paused or finished.
+ */
 export class SpawnTarget implements Action {
     constructor(
         public readonly id: string,
@@ -112,6 +135,10 @@ export class SpawnTarget implements Action {
     }
 }
 
+/**
+ * Toggles the paused State while the game is active.
+ * Game-over State cannot be paused or resumed.
+ */
 export class TogglePause implements Action {
     apply(state: State): State {
         return state.gameEnd ? state : { ...state, paused: !state.paused };

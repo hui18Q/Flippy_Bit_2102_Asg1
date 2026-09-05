@@ -2,7 +2,8 @@ import { Constants, Target, Viewport } from "./constants";
 import { State, FallingTargetView } from "./types";
 
 /**
- * Brings an SVG element to the foreground.
+ * Moves an SVG element to the end of its parent's children so overlays such
+ * as Game Over appear above gameplay elements.
  * @param elem SVG element to bring to the foreground
  */
 const bringToForeground = (elem: SVGElement): void => {
@@ -10,7 +11,7 @@ const bringToForeground = (elem: SVGElement): void => {
 };
 
 /**
- * Displays a SVG element on the canvas. Brings to foreground.
+ * Makes an SVG overlay visible and brings it above the game elements.
  * @param elem SVG element to display
  */
 const show = (elem: SVGElement): void => {
@@ -19,7 +20,7 @@ const show = (elem: SVGElement): void => {
 };
 
 /**
- * Hides a SVG element on the canvas.
+ * Hides an SVG overlay without removing it from the DOM.
  * @param elem SVG element to hide
  */
 const hide = (elem: SVGElement): void => {
@@ -27,10 +28,8 @@ const hide = (elem: SVGElement): void => {
 };
 
 /**
- * Creates an SVG element with the given properties.
- *
- * See https://developer.mozilla.org/en-US/docs/Web/SVG/Element
- * for valid element names and properties.
+ * Creates an SVG element and applies its initial attributes.
+ * Centralising SVG creation avoids repeating DOM setup code.
  *
  * @param namespace Namespace of the SVG element
  * @param name SVGElement name
@@ -48,20 +47,22 @@ const createSvgElement = (
 };
 
 /**
- * Renders the current state to the canvas.
- *
- * In MVC terms, this updates the View using the Model.
+ * Creates the fixed SVG interface once and returns the State renderer.
+ * DOM side effects are kept in this view layer rather than game-State logic.
  *
  * @param s Current state
  */
 
 export const render = (): ((state: State) => void) => {
     const svg = document.querySelector("#svgCanvas") as SVGSVGElement;
+
     const scoreText = document.querySelector("#scoreText") as HTMLElement;
     svg.setAttribute(
         "viewBox",
         `0 0 ${Viewport.CANVAS_WIDTH} ${Viewport.CANVAS_HEIGHT}`,
     );
+
+    const gameOver = document.querySelector("#gameOver") as SVGGElement;
 
     const checkLine = createSvgElement(svg.namespaceURI, "line", {
         x1: "0",
@@ -76,7 +77,7 @@ export const render = (): ((state: State) => void) => {
 
     const digitWidth = Viewport.CANVAS_WIDTH / Constants.DIGIT_COUNT;
 
-    // Create the eight interactive DigitBank cells once at startup.
+    // Create the eight reusable DigitBank SVG cells once when render() starts.
     const digitCells = Array.from({ length: Constants.DIGIT_COUNT }).map(
         (_, index) => {
             const rect = createSvgElement(svg.namespaceURI, "rect", {
@@ -106,25 +107,12 @@ export const render = (): ((state: State) => void) => {
         },
     );
 
-    const gameOverText = createSvgElement(svg.namespaceURI, "text", {
-        x: `${Viewport.CANVAS_WIDTH / 2}`,
-        y: "180",
-        "text-anchor": "middle",
-        "font-family": "monospace",
-        "font-size": "32",
-        fill: "black",
-        visibility: "hidden",
-        "data-fb-game-over": "true",
-    });
-    gameOverText.textContent = "GAME OVER";
-    svg.appendChild(gameOverText);
-
     const pausedText = createSvgElement(svg.namespaceURI, "text", {
         x: `${Viewport.CANVAS_WIDTH / 2}`,
         y: "220",
         "text-anchor": "middle",
         "font-family": "monospace",
-        "font-size": "28",
+        "font-size": "32",
         fill: "black",
         visibility: "hidden",
         "data-fb-paused": "true",
@@ -132,7 +120,10 @@ export const render = (): ((state: State) => void) => {
     pausedText.textContent = "PAUSED";
     svg.appendChild(pausedText);
 
-    // Reuse target SVG nodes instead of recreating them on every Tick.
+    /**
+     * Cache target SVG nodes by ID so they can be reused instead of recreated
+     * on every State update.
+     */
     const targetNodes = new Map<
         string,
         {
@@ -177,6 +168,9 @@ export const render = (): ((state: State) => void) => {
         return created;
     };
 
+    /**
+     * Reuses an existing target node when possible, otherwise creates it.
+     */
     const getTargetNode = (
         target: FallingTargetView,
     ): {
@@ -188,6 +182,7 @@ export const render = (): ((state: State) => void) => {
         return existing ? existing : createTargetNode(target);
     };
 
+    // Synchronise the existing SVG elements with the latest immutable State.
     return (state: State) => {
         state.allCurrentTargetsInPlay.forEach(target => {
             const { rect, text } = getTargetNode(target);
@@ -199,7 +194,10 @@ export const render = (): ((state: State) => void) => {
                 .toString(16)
                 .toUpperCase()
                 .padStart(2, "0");
-            text.textContent = target.isBonus ? `⭐${targetValue}` : targetValue;
+            // Visually distinguish bonus targets from normal targets.
+            text.textContent = target.isBonus
+                ? `⭐${targetValue}`
+                : targetValue;
             rect.style.stroke = target.isBonus ? "#FFD700" : "#000000";
         });
 
@@ -216,16 +214,17 @@ export const render = (): ((state: State) => void) => {
                 targetNodes.delete(id);
             });
 
+        // Update each DigitBank cell from the latest State.
         digitCells.forEach(({ rect, text }, index) => {
             const bit = state.digitBank[index];
             rect.setAttribute("fill", bit === 1 ? "#A5D6A7" : "#EF9A9A");
             text.textContent = `${bit}`;
         });
 
-        gameOverText.setAttribute(
-            "visibility",
-            state.gameEnd ? "visible" : "hidden",
-        );
+        // Reuse the starter #gameOver overlay rather than creating a duplicate node.
+        state.gameEnd ? show(gameOver) : hide(gameOver);
+
+        // Pause is a custom feature, so its visibility follows state.paused.
         pausedText.setAttribute(
             "visibility",
             state.paused ? "visible" : "hidden",
