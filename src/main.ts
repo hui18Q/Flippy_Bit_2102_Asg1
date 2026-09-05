@@ -1,7 +1,7 @@
 /**
  * Entry point: wires every Observable stream into the single state$
- * pipeline and subscribes render() to it. This is the only file that
- * starts a subscription; every other file stays pure.
+ * pipeline and subscribes render() to it.
+ * DOM side effects are isolated in view.ts.
  */
 
 import "./style.css";

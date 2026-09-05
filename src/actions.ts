@@ -7,6 +7,7 @@ import {
     hasReachedCheckLine,
     removeTargetsOutsideCanvas,
     fallSpeedForElapsedTime,
+    initialState
 } from "./state";
 import { Action, State, FallingTargetView } from "./types";
 import { Target, Viewport, Constants } from "./constants";
@@ -30,11 +31,11 @@ export class FlipDigit implements Action {
 }
 
 /**
- * Resolves the lowest target after it reaches the check line.
- * A correct match removes the target and updates the score; an incorrect
- * match ends the game.
+ * Resolves the current lowest target.
+ * A correct match removes the target and updates the score.
+ * An unmatched target at the check line ends the game.
  */
-const resolveReachedTarget = (
+const resolveTarget = (
     state: State,
     movedState: State,
     movedTargets: ReadonlyArray<FallingTargetView>,
@@ -43,6 +44,7 @@ const resolveReachedTarget = (
     targetMatchesDigitBank(state.digitBank, lowest)
         ? {
               ...movedState,
+              digitBank: initialState.digitBank,
               allCurrentTargetsInPlay: removeTargetById(
                   movedTargets,
                   lowest.id,
@@ -67,9 +69,11 @@ const resolveLowestTarget = (
 ): State => {
     const lowest = lowestTarget(movedTargets);
 
-    return !lowest || !hasReachedCheckLine(lowest)
+    return !lowest ||
+        (!targetMatchesDigitBank(state.digitBank, lowest) &&
+            !hasReachedCheckLine(lowest))
         ? movedState
-        : resolveReachedTarget(state, movedState, movedTargets, lowest);
+        : resolveTarget(state, movedState, movedTargets, lowest);
 };
 
 /**
