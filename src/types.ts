@@ -25,4 +25,5 @@ export type FallingTargetView =
         value: number;
         x: number;
         y: number;
+        isBonus: boolean;
     }>;

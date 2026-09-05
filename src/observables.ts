@@ -30,7 +30,7 @@ const randomTargetValue = (): number => Math.floor(Math.random() * 256); //*256 
 export const spawn$ = (): Observable<Action> => defer(() =>timer(randomSpawnDelay(),),)
 .pipe(repeat(), 
       scan( targetIndex => targetIndex + 1, -1), //start from -1, so the target index become 0 and enter map, and next loop when timer produce 0, scan rmb the targetIndex is 0, will +q become 1
-      map(index =>new SpawnTarget(`target-${index}`,randomTargetValue(),), ),); //index id from targetIndex
+      map(index =>new SpawnTarget(`target-${index}`,randomTargetValue(), randomBonus()), ),); //index id from targetIndex
 
 const randomSpawnDelay = (): number => 1000 + Math.floor(Math.random() * 2001); //math.random returns random decimal 0-1, then *2001 to become 0-2000. ect, then math.floor remove decimal part and add 1000 = 1000-3000(1-3sec)
 
@@ -53,3 +53,5 @@ export const pause$ =(): Observable<Action> =>
             map(() =>new TogglePause(),
             ),
         );
+
+export const randomBonus = (): boolean => Math.random() < 0.2;

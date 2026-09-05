@@ -1,5 +1,5 @@
 import { flipBit, moveAllTargets, lowestTarget, removeTargetById, targetMatchesDigitBank, hasReachedCheckLine, removeTargetsOutsideCanvas, fallSpeedForElapsedTime } from "./state";
-import { Action, State} from "./types";
+import { Action, State, FallingTargetView} from "./types";
 import {Target, Viewport, Constants} from "./constants";
 
 //create a class
@@ -19,38 +19,96 @@ export class FlipDigit implements Action {
     }
 }
 
+const resolveReachedTarget = (
+    state: State,
+    movedState: State,
+    movedTargets: ReadonlyArray<FallingTargetView>,
+    lowest: FallingTargetView,
+): State =>
+    targetMatchesDigitBank(
+        state.digitBank,
+        lowest,
+    )
+        ? {
+              ...movedState,
+              allCurrentTargetsInPlay:
+                  removeTargetById(
+                      movedTargets,
+                      lowest.id,
+                  ),
+              score: state.score + (lowest.isBonus ? 2:1),
+          }
+        : {
+              ...movedState,
+              gameEnd: true,
+          };
+
+const resolveLowestTarget = (
+    state: State,
+    movedState: State,
+    movedTargets: ReadonlyArray<FallingTargetView>,
+): State => {
+    const lowest =
+        lowestTarget(movedTargets);
+
+    return !lowest ||
+        !hasReachedCheckLine(lowest)
+        ? movedState
+        : resolveReachedTarget(
+              state,
+              movedState,
+              movedTargets,
+              lowest,
+          );
+};
+
+const applyActiveTick = (
+    state: State,
+): State => {
+    const nextElapsedMs =
+        state.elapsedMs +
+        Constants.TICK_RATE_MS;
+
+    const fallSpeed =
+        fallSpeedForElapsedTime(
+            nextElapsedMs,
+        );
+
+    const movedTargets =
+        removeTargetsOutsideCanvas(
+            moveAllTargets(
+                state
+                    .allCurrentTargetsInPlay,
+                fallSpeed,
+            ),
+        );
+
+    const movedState: State = {
+        ...state,
+        elapsedMs: nextElapsedMs,
+        allCurrentTargetsInPlay:
+            movedTargets,
+    };
+
+    return resolveLowestTarget(
+        state,
+        movedState,
+        movedTargets,
+    );
+};
+
 export class Tick implements Action {
-    apply(state: State): State {
-    if (state.gameEnd || state.paused) { return state; } //If the game is over OR the game is paused, Tick does nothing.
-
-    const nextElapsedMs = state.elapsedMs + Constants.TICK_RATE_MS;//take the current elapsed game time and add one tick duration to count the new game time after this tick
-    const fallSpeed =fallSpeedForElapsedTime(nextElapsedMs); //use that new elapsed time to calculate how fast the targets should fall now.
-    const movedTargets = removeTargetsOutsideCanvas(moveAllTargets(state.allCurrentTargetsInPlay, fallSpeed),); //move every current target down first
-    const movedState: State={...state, elapsedMs: nextElapsedMs, allCurrentTargetsInPlay: movedTargets,};
-    const lowest = lowestTarget(movedTargets); //find the lowest target after movement
-
-        //if there is no target, or the lowest target has not reached the line yet, just save the moved targets
-        if (!lowest || !hasReachedCheckLine(lowest))
-        {return movedState; }
-
-        //the lowest target reached the line
-        //check if player's binary value matches it
-        if (targetMatchesDigitBank(state.digitBank, lowest)) 
-        {
-            return {...movedState, 
-                    allCurrentTargetsInPlay: removeTargetById( movedTargets, lowest.id),
-                    score: state.score + 1,};
-        }           //correct answer: remove that target & score + 1
-
-        //wrong answer:end the game
-        return { ...movedState, gameEnd: true};
-    }
-}
+   apply(state: State): State {
+    return state.gameEnd || state.paused
+        ? state
+        : applyActiveTick(state);
+}}
 
 export class SpawnTarget implements Action {
     constructor(
         public readonly id: string,
         public readonly value: number,
+        public readonly isBonus: boolean,
     ) {}
 
     apply(state: State): State {
@@ -62,6 +120,7 @@ export class SpawnTarget implements Action {
                         value: this.value,
                         x:Viewport.CANVAS_WIDTH / 2 - Target.WIDTH / 2,
                         y: -Target.HEIGHT,
+                        isBonus: this.isBonus,
                     },
                 ],
             };
