@@ -150,4 +150,4 @@ npx prettier . --write
 
 ChatGPT(https://chatgpt.com/) and Claude(https://claude.com/) were used as learning and review aids during development.
 
-ChatGPT was used to help organise and phrase this README based on my own implementation, features and design decisions. I reviewed and verified the final content.
+Comments are refined by Chatgpt and ChatGPT was used to help organise and phrase this README based on my own implementation, features and design decisions. I reviewed and verified the final content.
