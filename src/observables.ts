@@ -4,54 +4,97 @@ import {
     interval,
     map,
     Observable,
-    defer, //Create observable when someone subscribe
-    repeat, //when observable complete, subscribe again
-    timer, //similar to interval, but wait 1 sec -> emit -> complete
+    defer,
+    repeat,
+    timer,
     scan,
 } from "rxjs";
 
 import { DIGIT_KEYS, Constants } from "./constants";
-import { FlipDigit, Tick , SpawnTarget, TogglePause,} from "./actions";
+import { FlipDigit, Tick, SpawnTarget, TogglePause } from "./actions";
 import { Action } from "./types";
 
-//takes no argument because because the event target (document) and action logic are fixed
+/**
+ * Converts valid number-key presses into FlipDigit Actions.
+ * Keys 1-8 correspond to the eight DigitBank positions.
+ */
 export const flipDigit$ = (): Observable<Action> =>
-    fromEvent<KeyboardEvent>( document, "keydown", //ruen keyboard event, listen to keydown event, and return an observable of Action
-    ).pipe(
-        map(event => DIGIT_KEYS.indexOf(event.key)), //indexOf is the index or the array, event.key is exact character value of the physical key the user just pressed on their keyboard
-        filter(index => index >= 0),                 //exp:event.key=3, the indexOf("3") returns 2.
+    fromEvent<KeyboardEvent>(document, "keydown").pipe(
+        map(event => DIGIT_KEYS.indexOf(event.key)),
+        filter(index => index >= 0),
         map(index => new FlipDigit(index)),
-    );//user clicks a key on keyboard, then enter pipe, map finds the key index, filter checks the index, then map flips the index digit using FlipDigit class, the class will access the flipbit function to flip the bit and return a new state.
-export const tick$ = (): Observable<Action> =>interval(Constants.TICK_RATE_MS,)
-.pipe(map(() => new Tick()),);
+    );
 
-const randomTargetValue = (): number => Math.floor(Math.random() * 256); //*256 to get value from 46-255
+/**
+ * Emits Tick Actions at the configured interval to drive game movement.
+ */
+export const tick$ = (): Observable<Action> =>
+    interval(Constants.TICK_RATE_MS).pipe(map(() => new Tick()));
 
-export const spawn$ = (): Observable<Action> => defer(() =>timer(randomSpawnDelay(),),)
-.pipe(repeat(), 
-      scan( targetIndex => targetIndex + 1, -1), //start from -1, so the target index become 0 and enter map, and next loop when timer produce 0, scan rmb the targetIndex is 0, will +q become 1
-      map(index =>new SpawnTarget(`target-${index}`,randomTargetValue(), randomBonus()), ),); //index id from targetIndex
+/**
+ * Generates a target value in the 8-bit range 0-255.
+ */
+const randomTargetValue = (): number => Math.floor(Math.random() * 256);
 
-const randomSpawnDelay = (): number => 1000 + Math.floor(Math.random() * 2001); //math.random returns random decimal 0-1, then *2001 to become 0-2000. ect, then math.floor remove decimal part and add 1000 = 1000-3000(1-3sec)
+/**
+ * Generates a random delay between 1 and 3 seconds for the next target.
+ */
+const randomSpawnDelay = (): number => 1000 + Math.floor(Math.random() * 2001);
 
-export const mouseFlipDigit$ =
-    (): Observable<Action> =>fromEvent<MouseEvent>(document, "mousedown")
-    .pipe( map(event => event.target instanceof Element ? event.target.getAttribute( "data-fb-digit-index" ): null,),
-           map(index => index === null ? -1 : Number(index),), //convert "string" to number, -1 is invalid digit
-           filter(index => index >= 0), //remove invalid clicks
-           map(index => new FlipDigit(index),),
-        );
+/**
+ * Creates falling-target Actions using a new random delay, target value and
+ * bonus status for each spawn cycle.
+ */
+export const spawn$ = (): Observable<Action> =>
+    // defer recalculates the random delay for every new spawn cycle.
+    defer(() => timer(randomSpawnDelay())).pipe(
+        repeat(),
+        scan(targetIndex => targetIndex + 1, -1),
+        map(
+            index =>
+                new SpawnTarget(
+                    `target-${index}`,
+                    randomTargetValue(),
+                    randomBonus(),
+                ),
+        ),
+    );
 
-export const restart$ =
-    (): Observable<KeyboardEvent> => fromEvent<KeyboardEvent>(document,"keydown")
-    .pipe( filter(event => event.code === "KeyR"), );
+/**
+ * Converts clicks on DigitBank SVG elements into FlipDigit Actions.
+ * Clicks outside digit elements are filtered out.
+ */
+export const mouseFlipDigit$ = (): Observable<Action> =>
+    fromEvent<MouseEvent>(document, "mousedown").pipe(
+        map(event =>
+            event.target instanceof Element
+                ? event.target.getAttribute("data-fb-digit-index")
+                : null,
+        ),
+        map(index => (index === null ? -1 : Number(index))),
+        filter(index => index >= 0),
+        map(index => new FlipDigit(index)),
+    );
 
-export const pause$ =(): Observable<Action> =>
-        fromEvent<KeyboardEvent>( document, "keydown",
-        ).pipe(
-            filter(event =>event.code ==="KeyP"),
-            map(() =>new TogglePause(),
-            ),
-        );
+/**
+ * Emits whenever R is pressed so main.ts can replace the current game
+ * stream with a fresh one.
+ */
+export const restart$ = (): Observable<KeyboardEvent> =>
+    fromEvent<KeyboardEvent>(document, "keydown").pipe(
+        filter(event => event.code === "KeyR"),
+    );
 
-export const randomBonus = (): boolean => Math.random() < 0.2;
+/**
+ * Converts P key presses into TogglePause Actions.
+ */
+export const pause$ = (): Observable<Action> =>
+    fromEvent<KeyboardEvent>(document, "keydown").pipe(
+        filter(event => event.code === "KeyP"),
+        map(() => new TogglePause()),
+    );
+
+/**
+ * Gives each newly spawned target a 20% chance of being a bonus target.
+ */
+const randomBonus = (): boolean => Math.random() < 0.2;

@@ -1,97 +1,113 @@
 import { Action, Bit, DigitBank, State, FallingTargetView } from "./types";
 import { Target, Viewport, Constants } from "./constants";
 
-//a object with type (state) create starting state,  and is the actual starting game (actual value) instead of a blueprint
+// Initial values used whenever a fresh game State stream starts.
 export const initialState: State = {
     digitBank: [0, 0, 0, 0, 0, 0, 0, 0],
-    allCurrentTargetsInPlay: [], //not value cuz targets will be created by spawn$
-    gameEnd: false,    
-    score: 0,       
-    elapsedMs: 0,      
-    paused: false         
+    allCurrentTargetsInPlay: [],
+    gameEnd: false,
+    score: 0,
+    elapsedMs: 0,
+    paused: false,
+    healthReserve: 1,
 };
 
-//create function flipbit, takes bank & index as parameters, return type DigitBank(array), which produced by 
-export const flipBit = (    //flipBit([0,0,0,0,0,0,0,0], 3) => [0,0,0,1,0,0,0,0] note: index is 0-based, so index 3 is the 4th bit
-    bank: DigitBank,
-    index: number,
-): DigitBank =>
-    bank.map((bit, currentIndex) =>  //bit=current value, currentIndex=current position 
-        currentIndex === index //check is the current index is the one that user wanted to flip
-            ? bit === 0 ? 1 : 0 //if yes flip the bit from 0 to 1 , else flip from 1 to 0
-            : bit, //if not the one user wanted to flip, just remain the same value
+/*
+ * Flips one position in the DigitBank and returns a new array so the
+ * previous State remains unchanged.
+ */
+export const flipBit = (bank: DigitBank, index: number): DigitBank =>
+    bank.map((bit, currentIndex) =>
+        currentIndex === index ? (bit === 0 ? 1 : 0) : bit,
     );
 
-//Convert binary to decimal exp: 00010011 -> 19
-export const digitBankValue = (
-    bank: DigitBank, //DigitBank = [0,0,1....   ] & this convert the whole array into a numeric value
-): number => bank.reduce<number>(
-        (total, bit) => total * 2 + bit, //current total start with 0, then take the bit value*2 + current bit value
-        0,
-    );
+/*
+ * Converts the 8-bit DigitBank into its numeric value for comparison with
+ * a hexadecimal target.
+ */
+export const digitBankValue = (bank: DigitBank): number =>
+    bank.reduce<number>((total, bit) => total * 2 + bit, 0);
 
-export const reduceState = (
-    state: State,
-    action: Action,
-): State =>
-    action.apply(state); //return new state
+/**
+ * Applies an incoming Action to the current State.
+ * Used by scan() to produce each successive game State.
+ */
+export const reduceState = (state: State, action: Action): State =>
+    action.apply(state);
 
-//////////////////////////////////
-//add movement function to state//
-//////////////////////////////////
-
-export const moveTarget = (target: FallingTargetView, fallSpeed: number): FallingTargetView => 
-({
+/**
+ * Returns a new target with its vertical position advanced by the current
+ * fall speed.
+ */
+export const moveTarget = (
+    target: FallingTargetView,
+    fallSpeed: number,
+): FallingTargetView => ({
     ...target,
     y: target.y + fallSpeed,
-}); //target is object
+});
 
-export const moveAllTargets = (targets: ReadonlyArray<FallingTargetView>, fallSpeed: number):       
-ReadonlyArray<FallingTargetView> => targets.map(target => moveTarget(target, fallSpeed)); //target becomes array
-/*targets = [
-    {
-        id: "target-0",
-        value: 19,
-        x: 268,
-        y: 40,
-    },
-    {
-        id: "target-1",
-        value: 47,
-        x: 200,
-        y: 41,
-    },]; */
+/**
+ * Moves every active target without mutating the existing target array.
+ */
+export const moveAllTargets = (
+    targets: ReadonlyArray<FallingTargetView>,
+    fallSpeed: number,
+): ReadonlyArray<FallingTargetView> =>
+    targets.map(target => moveTarget(target, fallSpeed));
 
-//////////////////
-//Add base line///
-//////////////////
-export const lowestTarget = (targets: ReadonlyArray<FallingTargetView>
+/**
+ * Finds the lowest unresolved target because only that target may be
+ * compared with the player's DigitBank.
+ */
+export const lowestTarget = (
+    targets: ReadonlyArray<FallingTargetView>,
 ): FallingTargetView | undefined =>
-targets.length === 0 ? undefined :  //length means the length of array if [1,2,3] then length=3
-targets.reduce((lowest, target) => 
-target.y > lowest.y ? target : lowest); //takes y to compare, lowest start from the first array value cuz not initial start
+    targets.length === 0
+        ? undefined
+        : targets.reduce((lowest, target) =>
+              target.y > lowest.y ? target : lowest,
+          );
 
-//check if the target touched the bottom line
-export const hasReachedCheckLine = (target: FallingTargetView,)
-: boolean => target.y + Target.HEIGHT >= Constants.CHECK_LINE_Y;
+/**
+ * Checks whether the bottom edge of a target has reached the check line.
+ */
+export const hasReachedCheckLine = (target: FallingTargetView): boolean =>
+    target.y + Target.HEIGHT >= Constants.CHECK_LINE_Y;
 
-//check if the digitbank value matches the target value
-export const targetMatchesDigitBank = (bank: DigitBank, target: FallingTargetView,
+/**
+ * Compares the numeric DigitBank value with the target's hexadecimal value.
+ */
+export const targetMatchesDigitBank = (
+    bank: DigitBank,
+    target: FallingTargetView,
 ): boolean => digitBankValue(bank) === target.value;
 
+/**
+ * Removes a resolved target by returning a filtered target array.
+ */
 export const removeTargetById = (
     targets: ReadonlyArray<FallingTargetView>,
     id: string,
-): ReadonlyArray<FallingTargetView> => targets.filter(target => target.id !== id);
+): ReadonlyArray<FallingTargetView> =>
+    targets.filter(target => target.id !== id);
 
-//////////////////////////////////////////////////
-//Keep only the targets that still inside canvas// a safety function
-//////////////////////////////////////////////////
-export const removeTargetsOutsideCanvas = (targets: ReadonlyArray<FallingTargetView>)
-: ReadonlyArray<FallingTargetView> => targets.filter( target => target.y <= Viewport.CANVAS_HEIGHT);
+/**
+ * Removes targets that have moved beyond the visible play area.
+ */
+export const removeTargetsOutsideCanvas = (
+    targets: ReadonlyArray<FallingTargetView>,
+): ReadonlyArray<FallingTargetView> =>
+    targets.filter(target => target.y <= Viewport.CANVAS_HEIGHT);
 
-export const fallSpeedForElapsedTime = (elapsedMs: number): 
-number =>Math.min(
-        Constants.FALL_SPEED + Math.floor(elapsedMs / Constants.SPEED_UP_EVERY_MS) * Constants.SPEED_INCREMENT, //formula:currentSpeed=baseSpeed+⌊speedUpInterval/elapsedTime​⌋×speedIncrement
-        Constants.MAX_FALL_SPEED, //to ensure the game speed wont excees 4pixels per tick
+/**
+ * Calculates the current fall speed from survival time and caps it at the
+ * configured maximum speed.
+ */
+export const fallSpeedForElapsedTime = (elapsedMs: number): number =>
+    Math.min(
+        Constants.FALL_SPEED +
+            Math.floor(elapsedMs / Constants.SPEED_UP_EVERY_MS) *
+                Constants.SPEED_INCREMENT,
+        Constants.MAX_FALL_SPEED,
     );
