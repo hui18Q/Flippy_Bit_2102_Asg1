@@ -1,71 +1,164 @@
-# Assignment 1
+# Flippy Bit
 
-## Usage
+FIT2102 Programming Paradigms — Assignment 1
 
-Setup (requires node.js):
+Flippy Bit is a Functional Reactive Programming game implemented in
+TypeScript, RxJS and SVG.
 
-```bash
-> npm install
-```
+The player controls an 8-bit binary `DigitBank` and must match each falling
+hexadecimal target before it reaches the check line.
 
-Start tests:
+## Running the Game
 
-```bash
-> npm test
-```
-
-Serve up the App (and ctrl-click the URL that appears in the console)
+Install dependencies:
 
 ```bash
-> npm run dev
+npm install
 ```
 
-To format your code, for the assignment specifications:
+Start the development server:
+
+```bash
+npm run dev
+```
+
+Open the URL printed by Vite in the terminal.
+
+## Controls
+
+- `1`–`8`: flip the corresponding binary digit
+- Mouse click: flip a digit by clicking its SVG cell
+- `P`: pause or resume the game
+- `R`: restart the game without refreshing the browser
+
+The first mouse click starts the game.
+
+## Gameplay
+
+- Targets contain random 8-bit hexadecimal values.
+- New targets spawn after a random delay of 1–3 seconds.
+- Multiple targets may be on screen at the same time.
+- Only the lowest unresolved target is checked against the `DigitBank`.
+- A correct normal target gives `1` point.
+- An incorrect target reaching the check line ends the game.
+- Resolved and off-screen targets are removed.
+- Falling speed increases as survival time increases.
+
+## Advanced Features
+
+### Pause / Resume
+
+Press `P` to pause or resume the game.
+
+While paused:
+
+- falling targets stop moving
+- new targets are not added to the game state
+- player digit input is ignored
+
+The paused status is stored in the immutable game `State`.
+
+### Bonus Multiplier Targets
+
+Some randomly generated targets are bonus targets.
+
+Bonus targets:
+
+- are displayed with a star and highlighted border
+- use the same hexadecimal matching rules as normal targets
+- award `2` points instead of `1` when matched correctly
+
+The bonus status is stored in `FallingTargetView.isBonus`.
+
+## Functional Reactive Design
+
+The game uses a single Observable-based state pipeline.
+
+```text
+keyboard input ─┐
+mouse input ────┤
+timer ticks ────┤
+target spawning ├─> merge()
+pause input ────┘
+                    ↓
+              scan(reduceState)
+                    ↓
+                  State
+                    ↓
+                 render()
+```
+
+`merge()` combines the gameplay Action streams, while `scan()` accumulates
+successive immutable game states.
+
+Game logic and rendering are separated across the project:
+
+- `state.ts` — pure state helper functions
+- `actions.ts` — immutable state transitions
+- `observables.ts` — keyboard, mouse, timing and spawning streams
+- `view.ts` — SVG and DOM rendering
+- `main.ts` — connects the Observable streams and renderer
+- `types.ts` — game types
+- `constants.ts` — shared game configuration
+
+## Project Structure
+
+```text
+src/
+├── main.ts          - connects Observable streams and starts rendering
+├── types.ts         - game data types and Action interface
+├── constants.ts     - shared game settings and dimensions
+├── state.ts         - pure helper functions and initial State
+├── actions.ts       - immutable State transitions
+├── observables.ts   - keyboard, mouse, timer and spawning streams
+├── view.ts          - SVG and DOM rendering
+└── style.css        - game styling
+
+test/
+└── main.test.ts     - Vitest tests for core game logic
+
+index.html           - starter SVG layout and game-over overlay
+README.md            - project documentation
+```
+
+## Testing
+
+The project includes a Vitest test suite with 34 tests covering:
+
+- `DigitBank` flipping and immutability
+- binary-to-number conversion
+- target movement and cleanup
+- lowest-target selection
+- check-line detection
+- normal and bonus scoring
+- incorrect-answer game-over behaviour
+- `healthReserve`
+- pause and resume behaviour
+- target spawning
+- increasing and capped fall speed
+
+Run the tests with:
+
+```bash
+npm run test:run
+```
+
+## Build and Formatting
+
+Verify the production build with:
+
+```bash
+npm run build
+```
+
+Format the project with:
 
 ```bash
 npx prettier . --write
 ```
 
-The configuration for this is set in `.prettierrc.json`. Feel free to change this to your heart's desire, but try to ensure it still fits the assignment guidelines.
+## AI Assistance
 
-If you are using VS Code, you can also install the [Prettier extension](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode). This skeleton code is set up to automatically format your code on save. You can disable this in `.vscode/settings.json` by changing `"editor.formatOnSave": true` to `"editor.formatOnSave": false`.
+ChatGPT and Claude were used as learning and review aids during development. Relevant AI-assisted or AI-generated code is identified in source-code comments with the scope of assistance.
 
-## Implementing features
-
-There are a few files you may wish to modify. The rest should **not** be modified as they are used for configuring the build.
-
-`src/main.ts`
-
-- Code file used as the entry point
-- Most of your game logic should go here
-- Contains main function that is called on page load
-
-`src/style.css`
-
-- Stylesheet
-- You may edit this if you wish
-
-`index.html`
-
-- Main html file
-- Contains scaffold of game window and some sample shapes
-- Feel free to add to this, but avoid changing the existing code, especially the `id` fields
-
-`test/*.test.ts`
-
-- If you want to add tests, these go here
-- Uses [`vitest`](https://vitest.dev/api/)
-
-We expect the core logic of your game to be in `src/main.ts`, however, you may elect to spread your code over multiple files. In this case, please use [TS Modules](https://www.typescriptlang.org/docs/handbook/modules.html).
-
-Avoid separating code into too many files as it makes it hard to mark. The maximum recommended code file structure would be something like
-
-```
-src/
-  main.ts        -- main code logic inc. core game loop
-  types.ts       -- common types and type aliases
-  util.ts        -- util functions
-  state.ts       -- state processing and transformation
-  view.ts        -- rendering
-  observable.ts  -- functions to create Observable streams
-```
+ChatGPT was also used to help organise and phrase this README based on my own implementation features, testing results and design decisions. I reviewed and verified the final content.

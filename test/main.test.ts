@@ -58,7 +58,6 @@ describe("DigitBank", () => {
 
     it("does not mutate the original DigitBank", () => {
         const bank: DigitBank = [0, 0, 0, 0, 0, 0, 0, 0];
-
         const result = flipBit(bank, 0);
 
         expect(bank).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
@@ -75,7 +74,6 @@ describe("DigitBank", () => {
 describe("Target helpers", () => {
     it("moves a target down by the supplied fall speed", () => {
         const target = makeTarget({ y: 50 });
-
         const result = moveTarget(target, 2);
 
         expect(result.y).toBe(52);
@@ -84,37 +82,20 @@ describe("Target helpers", () => {
 
     it("moves every target without mutating the original array", () => {
         const targets = [
-            makeTarget({
-                id: "a",
-                y: 10,
-            }),
-            makeTarget({
-                id: "b",
-                y: 20,
-            }),
+            makeTarget({ id: "a", y: 10 }),
+            makeTarget({ id: "b", y: 20 }),
         ];
-
         const result = moveAllTargets(targets, 2);
 
         expect(result.map(target => target.y)).toEqual([12, 22]);
-
         expect(targets.map(target => target.y)).toEqual([10, 20]);
     });
 
     it("finds the lowest unresolved target", () => {
         const targets = [
-            makeTarget({
-                id: "upper",
-                y: 50,
-            }),
-            makeTarget({
-                id: "lowest",
-                y: 200,
-            }),
-            makeTarget({
-                id: "middle",
-                y: 120,
-            }),
+            makeTarget({ id: "upper", y: 50 }),
+            makeTarget({ id: "lowest", y: 200 }),
+            makeTarget({ id: "middle", y: 120 }),
         ];
 
         expect(lowestTarget(targets)?.id).toBe("lowest");
@@ -142,17 +123,13 @@ describe("Target helpers", () => {
 
     it("matches a target against the DigitBank value", () => {
         const bank: DigitBank = [0, 0, 0, 0, 0, 1, 0, 1];
-
-        const target = makeTarget({
-            value: 5,
-        });
+        const target = makeTarget({ value: 5 });
 
         expect(targetMatchesDigitBank(bank, target)).toBe(true);
     });
 
     it("removes a resolved target by id", () => {
         const targets = [makeTarget({ id: "a" }), makeTarget({ id: "b" })];
-
         const result = removeTargetById(targets, "a");
 
         expect(result.map(target => target.id)).toEqual(["b"]);
@@ -160,16 +137,9 @@ describe("Target helpers", () => {
 
     it("removes targets below the canvas", () => {
         const targets = [
-            makeTarget({
-                id: "visible",
-                y: 200,
-            }),
-            makeTarget({
-                id: "outside",
-                y: Viewport.CANVAS_HEIGHT + 1,
-            }),
+            makeTarget({ id: "visible", y: 200 }),
+            makeTarget({ id: "outside", y: Viewport.CANVAS_HEIGHT + 1 }),
         ];
-
         const result = removeTargetsOutsideCanvas(targets);
 
         expect(result.map(target => target.id)).toEqual(["visible"]);
@@ -202,9 +172,7 @@ describe("FlipDigit Action", () => {
     });
 
     it("ignores input while paused", () => {
-        const pausedState = makeState({
-            paused: true,
-        });
+        const pausedState = makeState({ paused: true });
 
         const result = new FlipDigit(0).apply(pausedState);
 
@@ -212,9 +180,7 @@ describe("FlipDigit Action", () => {
     });
 
     it("ignores input after game over", () => {
-        const endedState = makeState({
-            gameEnd: true,
-        });
+        const endedState = makeState({ gameEnd: true });
 
         expect(new FlipDigit(0).apply(endedState)).toBe(endedState);
     });
@@ -227,7 +193,6 @@ describe("SpawnTarget Action", () => {
         );
 
         expect(result.allCurrentTargetsInPlay.length).toBe(1);
-
         expect(result.allCurrentTargetsInPlay[0].value).toBe(15);
     });
 
@@ -246,9 +211,7 @@ describe("SpawnTarget Action", () => {
     });
 
     it("does not spawn targets while paused", () => {
-        const pausedState = makeState({
-            paused: true,
-        });
+        const pausedState = makeState({ paused: true });
 
         const result = new SpawnTarget("target-1", 10, false).apply(
             pausedState,
@@ -261,19 +224,12 @@ describe("SpawnTarget Action", () => {
 describe("Tick Action", () => {
     it("advances elapsed game time", () => {
         const result = new Tick().apply(initialState);
-
         expect(result.elapsedMs).toBe(Constants.TICK_RATE_MS);
     });
 
     it("moves active targets downward", () => {
-        const target = makeTarget({
-            y: 100,
-        });
-
-        const state = makeState({
-            allCurrentTargetsInPlay: [target],
-        });
-
+        const target = makeTarget({ y: 100 });
+        const state = makeState({ allCurrentTargetsInPlay: [target] });
         const result = new Tick().apply(state);
 
         expect(result.allCurrentTargetsInPlay[0].y).toBeGreaterThan(target.y);
@@ -286,10 +242,7 @@ describe("Tick Action", () => {
             isBonus: false,
         });
 
-        const state = makeState({
-            allCurrentTargetsInPlay: [target],
-        });
-
+        const state = makeState({ allCurrentTargetsInPlay: [target] });
         const result = new Tick().apply(state);
 
         expect(result.score).toBe(1);
@@ -304,10 +257,7 @@ describe("Tick Action", () => {
             isBonus: true,
         });
 
-        const state = makeState({
-            allCurrentTargetsInPlay: [target],
-        });
-
+        const state = makeState({ allCurrentTargetsInPlay: [target] });
         const result = new Tick().apply(state);
 
         expect(result.score).toBe(2);
@@ -320,10 +270,7 @@ describe("Tick Action", () => {
             y: Constants.CHECK_LINE_Y - Target.HEIGHT - Constants.FALL_SPEED,
         });
 
-        const state = makeState({
-            allCurrentTargetsInPlay: [target],
-        });
-
+        const state = makeState({ allCurrentTargetsInPlay: [target] });
         const result = new Tick().apply(state);
 
         expect(result.gameEnd).toBe(true);
@@ -346,11 +293,9 @@ describe("Tick Action", () => {
         const state = makeState({
             allCurrentTargetsInPlay: [upperTarget, lowestCorrectTarget],
         });
-
         const result = new Tick().apply(state);
 
         expect(result.gameEnd).toBe(false);
-
         expect(result.allCurrentTargetsInPlay.map(target => target.id)).toEqual(
             ["upper"],
         );
@@ -361,7 +306,6 @@ describe("Tick Action", () => {
             paused: true,
             allCurrentTargetsInPlay: [makeTarget()],
         });
-
         const result = new Tick().apply(pausedState);
 
         expect(result).toBe(pausedState);
@@ -376,20 +320,14 @@ describe("TogglePause Action", () => {
     });
 
     it("resumes a paused game", () => {
-        const pausedState = makeState({
-            paused: true,
-        });
-
+        const pausedState = makeState({ paused: true });
         const result = new TogglePause().apply(pausedState);
 
         expect(result.paused).toBe(false);
     });
 
     it("does not change a finished game", () => {
-        const endedState = makeState({
-            gameEnd: true,
-        });
-
+        const endedState = makeState({ gameEnd: true });
         const result = new TogglePause().apply(endedState);
 
         expect(result).toBe(endedState);
