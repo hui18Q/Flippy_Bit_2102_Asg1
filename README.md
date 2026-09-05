@@ -115,7 +115,7 @@ src/
 └── style.css        - game styling
 
 test/
-└── main.test.ts     - Vitest tests for core game logic
+└── main.test.ts     - starter Vitest checks for state$
 
 index.html           - starter SVG layout and game-over overlay
 README.md            - project documentation
@@ -123,19 +123,8 @@ README.md            - project documentation
 
 ## Testing
 
-The project includes a Vitest test suite with 34 tests covering:
-
-- `DigitBank` flipping and immutability
-- binary-to-number conversion
-- target movement and cleanup
-- lowest-target selection
-- check-line detection
-- normal and bonus scoring
-- incorrect-answer game-over behaviour
-- `healthReserve`
-- pause and resume behaviour
-- target spawning
-- increasing and capped fall speed
+The original starter Vitest checks are retained to verify that the main
+`state$` Observable exists and is exported as a function.
 
 Run the tests with:
 
@@ -159,6 +148,6 @@ npx prettier . --write
 
 ## AI Assistance
 
-ChatGPT and Claude were used as learning and review aids during development. Relevant AI-assisted or AI-generated code is identified in source-code comments with the scope of assistance.
+ChatGPT(https://chatgpt.com/) and Claude(https://claude.com/) were used as learning and review aids during development.
 
-ChatGPT was also used to help organise and phrase this README based on my own implementation features, testing results and design decisions. I reviewed and verified the final content.
+ChatGPT was used to help organise and phrase this README based on my own implementation, features and design decisions. I reviewed and verified the final content.
