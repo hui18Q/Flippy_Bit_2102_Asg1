@@ -1,28 +1,31 @@
-//Only accept a certain number of values
-//allows other file to use(import) this object
-export const Viewport = 
-{
+export const Viewport = {
     CANVAS_WIDTH: 600,
     CANVAS_HEIGHT: 400,
-} as const; //makes the object value fixed
+} as const;
 
-export const Target = 
-{
+export const Target = {
     WIDTH: 64,
     HEIGHT: 36,
 } as const;
 
-//define game constants
+//keep shared game settings
 export const Constants = {
-    DIGIT_COUNT: 8, //binary ans -> 00000000 - 8 digits ttl
-    TICK_RATE_MS: 16, //  One tick every 16 milliseconds (~62.5 FPS)/62 ticks per sec
-    FALL_SPEED: 1, // 1 pixel per tick, adds 1 pixel to the target's y position
-    CHECK_LINE_Y: 300, //check line y position
-    SPEED_UP_EVERY_MS: 10000, //increase every 10 sec
-    SPEED_INCREMENT: 0.5, //increase 0.5speed fo reach increase
-    MAX_FALL_SPEED: 4, 
-    
+    DIGIT_COUNT: 8,
+    TICK_RATE_MS: 16,
+    FALL_SPEED: 1,
+    CHECK_LINE_Y: 300,
+    SPEED_UP_EVERY_MS: 10000,
+    SPEED_INCREMENT: 0.5,
+    MAX_FALL_SPEED: 4,
 } as const;
-
-//DIGIT_KEYS is an array of strings representing the valid keyboard ks for digits 1 to 8.
-export const DIGIT_KEYS: ReadonlyArray<string> = [ "1", "2", "3", "4", "5", "6", "7", "8",];
+// Number keys map from left to right across the eight DigitBank cells.
+export const DIGIT_KEYS: ReadonlyArray<string> = [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+];

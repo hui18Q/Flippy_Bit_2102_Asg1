@@ -2,28 +2,26 @@ export type Bit = 0 | 1;
 
 export type DigitBank = ReadonlyArray<Bit>;
 
-//define state, the blueprint
-// State processing
-export type State = Readonly<{ //create a ts type called state, Readonly means cannot change this state, but can create a new state using {...state, gameEnd:true}
-    digitBank: DigitBank; //the style 'state' must contain digitBank, which is an array of 0/1, so should be digitBank: [0,0,0,0,0,0,0,0]
-    allCurrentTargetsInPlay: ReadonlyArray<FallingTargetView>; // an array of FallingTargetView, allCurrentTargetsInPlay: [FallingTargetView,FallingTargetView,...]
-    gameEnd: boolean; // gameEnd: true/false
+// State is immutable; Actions create a new State instead of mutating this one.
+export type State = Readonly<{
+    digitBank: DigitBank;
+    allCurrentTargetsInPlay: ReadonlyArray<FallingTargetView>;
+    gameEnd: boolean;
     score: number;
-    elapsedMs: number; //how long this game has been running
+    elapsedMs: number;
     paused: boolean;
+    healthReserve: number;
 }>;
 
-//Any Action must have a function apply, Action: FlipDigit/Tick/Spawntarget/Restart
-export interface Action 
-{
-    apply(state: State): State; //receive state & return state
+// Every game event transforms the current State into the next State.
+export interface Action {
+    apply(state: State): State;
 }
 
-export type FallingTargetView =
-    Readonly<{
-        id: string;
-        value: number;
-        x: number;
-        y: number;
-        isBonus: boolean;
-    }>;
+export type FallingTargetView = Readonly<{
+    id: string;
+    value: number;
+    x: number;
+    y: number;
+    isBonus: boolean;
+}>;

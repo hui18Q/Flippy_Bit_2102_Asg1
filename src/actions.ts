@@ -1,45 +1,50 @@
-import { flipBit, moveAllTargets, lowestTarget, removeTargetById, targetMatchesDigitBank, hasReachedCheckLine, removeTargetsOutsideCanvas, fallSpeedForElapsedTime } from "./state";
-import { Action, State, FallingTargetView} from "./types";
-import {Target, Viewport, Constants} from "./constants";
+import {
+    flipBit,
+    moveAllTargets,
+    lowestTarget,
+    removeTargetById,
+    targetMatchesDigitBank,
+    hasReachedCheckLine,
+    removeTargetsOutsideCanvas,
+    fallSpeedForElapsedTime,
+} from "./state";
+import { Action, State, FallingTargetView } from "./types";
+import { Target, Viewport, Constants } from "./constants";
 
 //create a class
 export class FlipDigit implements Action {
-    constructor(public readonly index: number) {}//exp: new FlipDigit(3) => index=3, which means the 4th bit will be flipped
-    
+    constructor(public readonly index: number) {}
+
     apply(state: State): State {
-        return state.gameEnd || state.paused //if game end dont let user change bit, just return the same state //else return a new state with the flipped bit
+        return state.gameEnd || state.paused // Ignore player input while the game is paused or finished.
             ? state
             : {
-                ...state,
-                digitBank: flipBit( ////call the flipbit function to flip bit and return
-                    state.digitBank, ////acces the type state
-                    this.index, ////take the index stored in new FlipDigit(3) => index=3
-                ),
-            };
+                  ...state,
+                  digitBank: flipBit(state.digitBank, this.index),
+              };
     }
 }
 
+// Resolve the lowest target once it reaches the check line.
 const resolveReachedTarget = (
     state: State,
     movedState: State,
     movedTargets: ReadonlyArray<FallingTargetView>,
     lowest: FallingTargetView,
 ): State =>
-    targetMatchesDigitBank(
-        state.digitBank,
-        lowest,
-    )
+    targetMatchesDigitBank(state.digitBank, lowest)
         ? {
               ...movedState,
-              allCurrentTargetsInPlay:
-                  removeTargetById(
-                      movedTargets,
-                      lowest.id,
-                  ),
-              score: state.score + (lowest.isBonus ? 2:1),
+              allCurrentTargetsInPlay: removeTargetById(
+                  movedTargets,
+                  lowest.id,
+              ),
+              //Bonus targets award two points instead of one.
+              score: state.score + (lowest.isBonus ? 2 : 1),
           }
         : {
               ...movedState,
+              healthReserve: 0,
               gameEnd: true,
           };
 
@@ -48,61 +53,37 @@ const resolveLowestTarget = (
     movedState: State,
     movedTargets: ReadonlyArray<FallingTargetView>,
 ): State => {
-    const lowest =
-        lowestTarget(movedTargets);
+    const lowest = lowestTarget(movedTargets);
 
-    return !lowest ||
-        !hasReachedCheckLine(lowest)
+    return !lowest || !hasReachedCheckLine(lowest)
         ? movedState
-        : resolveReachedTarget(
-              state,
-              movedState,
-              movedTargets,
-              lowest,
-          );
+        : resolveReachedTarget(state, movedState, movedTargets, lowest);
 };
 
-const applyActiveTick = (
-    state: State,
-): State => {
-    const nextElapsedMs =
-        state.elapsedMs +
-        Constants.TICK_RATE_MS;
+const applyActiveTick = (state: State): State => {
+    const nextElapsedMs = state.elapsedMs + Constants.TICK_RATE_MS;
 
-    const fallSpeed =
-        fallSpeedForElapsedTime(
-            nextElapsedMs,
-        );
+    const fallSpeed = fallSpeedForElapsedTime(nextElapsedMs);
 
-    const movedTargets =
-        removeTargetsOutsideCanvas(
-            moveAllTargets(
-                state
-                    .allCurrentTargetsInPlay,
-                fallSpeed,
-            ),
-        );
+    const movedTargets = removeTargetsOutsideCanvas(
+        moveAllTargets(state.allCurrentTargetsInPlay, fallSpeed),
+    );
 
     const movedState: State = {
         ...state,
         elapsedMs: nextElapsedMs,
-        allCurrentTargetsInPlay:
-            movedTargets,
+        allCurrentTargetsInPlay: movedTargets,
     };
 
-    return resolveLowestTarget(
-        state,
-        movedState,
-        movedTargets,
-    );
+    return resolveLowestTarget(state, movedState, movedTargets);
 };
 
 export class Tick implements Action {
-   apply(state: State): State {
-    return state.gameEnd || state.paused
-        ? state
-        : applyActiveTick(state);
-}}
+    apply(state: State): State {
+        // Pausing freezes movement and elapsed game time.
+        return state.gameEnd || state.paused ? state : applyActiveTick(state);
+    }
+}
 
 export class SpawnTarget implements Action {
     constructor(
@@ -112,22 +93,27 @@ export class SpawnTarget implements Action {
     ) {}
 
     apply(state: State): State {
-    return state.gameEnd || state.paused? state :
-    {...state,
-     allCurrentTargetsInPlay: [...state.allCurrentTargetsInPlay,
-                    {
-                        id: this.id,
-                        value: this.value,
-                        x:Viewport.CANVAS_WIDTH / 2 - Target.WIDTH / 2,
-                        y: -Target.HEIGHT,
-                        isBonus: this.isBonus,
-                    },
-                ],
-            };
+        // Discard spawn actions while the game cannot progress.
+        return state.gameEnd || state.paused
+            ? state
+            : {
+                  ...state,
+                  allCurrentTargetsInPlay: [
+                      ...state.allCurrentTargetsInPlay,
+                      {
+                          id: this.id,
+                          value: this.value,
+                          x: Viewport.CANVAS_WIDTH / 2 - Target.WIDTH / 2,
+                          y: -Target.HEIGHT,
+                          isBonus: this.isBonus,
+                      },
+                  ],
+              };
     }
 }
 
 export class TogglePause implements Action {
-    apply(state: State): State { return state.gameEnd ? state:
-    { ...state, paused:!state.paused}; //false → true → false → true...
-    }}
+    apply(state: State): State {
+        return state.gameEnd ? state : { ...state, paused: !state.paused };
+    }
+}
