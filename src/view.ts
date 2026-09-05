@@ -180,38 +180,74 @@ export const render = (): ((state: State) => void) => {
 pausedText.textContent = "PAUSED";
 svg.appendChild(pausedText);
 
-       const targetNodes = new Map<string,{rect: SVGElement; text: SVGElement;}>();
-       const getTargetNode = (target: FallingTargetView,): 
-       { rect: SVGElement;text: SVGElement;} => 
-        { const existing = targetNodes.get(target.id);//if yes just reuse
-        if (existing) {return existing;}    
-            // If no, create the target rectangle
-    const rect = createSvgElement(svg.namespaceURI, "rect",
-            {
-                width:`${Target.WIDTH}`,
-                height:`${Target.HEIGHT}`,
-                rx:"6",
-                fill:"white",
-                stroke:"black",
-                "stroke-width":"2",
-                "data-fb-target-id":target.id,
-            },
-        );
-        const text = createSvgElement(svg.namespaceURI, "text",
+      const targetNodes = new Map<
+    string,
+    {
+        rect: SVGElement;
+        text: SVGElement;
+    }
+>();
+
+const createTargetNode = (
+    target: FallingTargetView,
+): {
+    rect: SVGElement;
+    text: SVGElement;
+} => {
+    const rect = createSvgElement(
+        svg.namespaceURI,
+        "rect",
+        {
+            width: `${Target.WIDTH}`,
+            height: `${Target.HEIGHT}`,
+            rx: "6",
+            fill: "white",
+            stroke: "black",
+            "stroke-width": "2",
+            "data-fb-target-id": target.id,
+        },
+    );
+
+    const text = createSvgElement(
+        svg.namespaceURI,
+        "text",
         {
             "text-anchor": "middle",
             "font-family": "monospace",
-             fill: "black",
+            fill: "black",
             "data-fb-target-id": target.id,
-        },);
+        },
+    );
 
     svg.appendChild(rect);
     svg.appendChild(text);
 
-    const created = {rect, text};
-    targetNodes.set( target.id, created); // Save them using target.id
-    return created;};
+    const created = {
+        rect,
+        text,
+    };
 
+    targetNodes.set(
+        target.id,
+        created,
+    );
+
+    return created;
+};
+
+const getTargetNode = (
+    target: FallingTargetView,
+): {
+    rect: SVGElement;
+    text: SVGElement;
+} => {
+    const existing =
+        targetNodes.get(target.id);
+
+    return existing
+        ? existing
+        : createTargetNode(target);
+};
 
 //update the SVG cells based on the current state when the state changes
 return (state: State) => {
@@ -221,20 +257,40 @@ return (state: State) => {
         rect.setAttribute("y",`${target.y}`,);
         text.setAttribute("x", `${target.x + Target.WIDTH / 2}`,);
         text.setAttribute("y", `${target.y + Target.HEIGHT / 2 + 6}`,);
-        text.textContent = target.value.toString(16).toUpperCase().padStart(2, "0"); //padStart convert 1 character to 2 8->08
+       const targetValue =
+    target.value
+        .toString(16)
+        .toUpperCase()
+        .padStart(2, "0");
+
+text.textContent =
+    target.isBonus
+        ? `⭐${targetValue}`
+        : targetValue; //padStart convert 1 character to 2 8->08  
+        rect.setAttribute(
+    "stroke",
+rect.style.stroke =
+    target.isBonus
+        ? "#FFD700"
+        : "#000000"
+);
     });
 
     // a variable stores a set of target id
 const activeTargetIds = new Set(state.allCurrentTargetsInPlay.map(target => target.id),); //takes whole target can return only the id, new set turns array ["id"] into {"id"}
 
-    targetNodes.forEach(({ rect, text }, id) => {
-        if (!activeTargetIds.has(id)) //has is used with set/map to check whether the id exist
-        {
+   Array.from(targetNodes.entries())
+    .filter(
+        ([id]) =>
+            !activeTargetIds.has(id),
+    )
+    .forEach(
+        ([id, { rect, text }]) => {
             rect.remove();
             text.remove();
             targetNodes.delete(id);
-        }
-    },);   
+        },
+    );  
                          
     digitCells.forEach(
     ({ rect, text }, index,) => {//{ rect, text } gets the SVG elements, index tells us which digit it is

@@ -1,0 +1,322 @@
+[1mdiff --git a/src/actions.ts b/src/actions.ts[m
+[1mindex c3cfc41..4bfbf49 100644[m
+[1m--- a/src/actions.ts[m
+[1m+++ b/src/actions.ts[m
+[36m@@ -1,5 +1,5 @@[m
+ import { flipBit, moveAllTargets, lowestTarget, removeTargetById, targetMatchesDigitBank, hasReachedCheckLine, removeTargetsOutsideCanvas, fallSpeedForElapsedTime } from "./state";[m
+[31m-import { Action, State} from "./types";[m
+[32m+[m[32mimport { Action, State, FallingTargetView} from "./types";[m
+ import {Target, Viewport, Constants} from "./constants";[m
+ [m
+ //create a class[m
+[36m@@ -19,38 +19,96 @@[m [mexport class FlipDigit implements Action {[m
+     }[m
+ }[m
+ [m
+[31m-export class Tick implements Action {[m
+[31m-    apply(state: State): State {[m
+[31m-    if (state.gameEnd || state.paused) { return state; } //If the game is over OR the game is paused, Tick does nothing.[m
+[32m+[m[32mconst resolveReachedTarget = ([m
+[32m+[m[32m    state: State,[m
+[32m+[m[32m    movedState: State,[m
+[32m+[m[32m    movedTargets: ReadonlyArray<FallingTargetView>,[m
+[32m+[m[32m    lowest: FallingTargetView,[m
+[32m+[m[32m): State =>[m
+[32m+[m[32m    targetMatchesDigitBank([m
+[32m+[m[32m        state.digitBank,[m
+[32m+[m[32m        lowest,[m
+[32m+[m[32m    )[m
+[32m+[m[32m        ? {[m
+[32m+[m[32m              ...movedState,[m
+[32m+[m[32m              allCurrentTargetsInPlay:[m
+[32m+[m[32m                  removeTargetById([m
+[32m+[m[32m                      movedTargets,[m
+[32m+[m[32m                      lowest.id,[m
+[32m+[m[32m                  ),[m
+[32m+[m[32m              score: state.score + (lowest.isBonus ? 2:1),[m
+[32m+[m[32m          }[m
+[32m+[m[32m        : {[m
+[32m+[m[32m              ...movedState,[m
+[32m+[m[32m              gameEnd: true,[m
+[32m+[m[32m          };[m
+ [m
+[31m-    const nextElapsedMs = state.elapsedMs + Constants.TICK_RATE_MS;//take the current elapsed game time and add one tick duration to count the new game time after this tick[m
+[31m-    const fallSpeed =fallSpeedForElapsedTime(nextElapsedMs); //use that new elapsed time to calculate how fast the targets should fall now.[m
+[31m-    const movedTargets = removeTargetsOutsideCanvas(moveAllTargets(state.allCurrentTargetsInPlay, fallSpeed),); //move every current target down first[m
+[31m-    const movedState: State={...state, elapsedMs: nextElapsedMs, allCurrentTargetsInPlay: movedTargets,};[m
+[31m-    const lowest = lowestTarget(movedTargets); //find the lowest target after movement[m
+[32m+[m[32mconst resolveLowestTarget = ([m
+[32m+[m[32m    state: State,[m
+[32m+[m[32m    movedState: State,[m
+[32m+[m[32m    movedTargets: ReadonlyArray<FallingTargetView>,[m
+[32m+[m[32m): State => {[m
+[32m+[m[32m    const lowest =[m
+[32m+[m[32m        lowestTarget(movedTargets);[m
+ [m
+[31m-        //if there is no target, or the lowest target has not reached the line yet, just save the moved targets[m
+[31m-        if (!lowest || !hasReachedCheckLine(lowest))[m
+[31m-        {return movedState; }[m
+[32m+[m[32m    return !lowest ||[m
+[32m+[m[32m        !hasReachedCheckLine(lowest)[m
+[32m+[m[32m        ? movedState[m
+[32m+[m[32m        : resolveReachedTarget([m
+[32m+[m[32m              state,[m
+[32m+[m[32m              movedState,[m
+[32m+[m[32m              movedTargets,[m
+[32m+[m[32m              lowest,[m
+[32m+[m[32m          );[m
+[32m+[m[32m};[m
+ [m
+[31m-        //the lowest target reached the line[m
+[31m-        //check if player's binary value matches it[m
+[31m-        if (targetMatchesDigitBank(state.digitBank, lowest)) [m
+[31m-        {[m
+[31m-            return {...movedState, [m
+[31m-                    allCurrentTargetsInPlay: removeTargetById( movedTargets, lowest.id),[m
+[31m-                    score: state.score + 1,};[m
+[31m-        }           //correct answer: remove that target & score + 1[m
+[32m+[m[32mconst applyActiveTick = ([m
+[32m+[m[32m    state: State,[m
+[32m+[m[32m): State => {[m
+[32m+[m[32m    const nextElapsedMs =[m
+[32m+[m[32m        state.elapsedMs +[m
+[32m+[m[32m        Constants.TICK_RATE_MS;[m
+ [m
+[31m-        //wrong answer:end the game[m
+[31m-        return { ...movedState, gameEnd: true};[m
+[31m-    }[m
+[31m-}[m
+[32m+[m[32m    const fallSpeed =[m
+[32m+[m[32m        fallSpeedForElapsedTime([m
+[32m+[m[32m            nextElapsedMs,[m
+[32m+[m[32m        );[m
+[32m+[m
+[32m+[m[32m    const movedTargets =[m
+[32m+[m[32m        removeTargetsOutsideCanvas([m
+[32m+[m[32m            moveAllTargets([m
+[32m+[m[32m                state[m
+[32m+[m[32m                    .allCurrentTargetsInPlay,[m
+[32m+[m[32m                fallSpeed,[m
+[32m+[m[32m            ),[m
+[32m+[m[32m        );[m
+[32m+[m
+[32m+[m[32m    const movedState: State = {[m
+[32m+[m[32m        ...state,[m
+[32m+[m[32m        elapsedMs: nextElapsedMs,[m
+[32m+[m[32m        allCurrentTargetsInPlay:[m
+[32m+[m[32m            movedTargets,[m
+[32m+[m[32m    };[m
+[32m+[m
+[32m+[m[32m    return resolveLowestTarget([m
+[32m+[m[32m        state,[m
+[32m+[m[32m        movedState,[m
+[32m+[m[32m        movedTargets,[m
+[32m+[m[32m    );[m
+[32m+[m[32m};[m
+[32m+[m
+[32m+[m[32mexport class Tick implements Action {[m
+[32m+[m[32m   apply(state: State): State {[m
+[32m+[m[32m    return state.gameEnd || state.paused[m
+[32m+[m[32m        ? state[m
+[32m+[m[32m        : applyActiveTick(state);[m
+[32m+[m[32m}}[m
+ [m
+ export class SpawnTarget implements Action {[m
+     constructor([m
+         public readonly id: string,[m
+         public readonly value: number,[m
+[32m+[m[32m        public readonly isBonus: boolean,[m
+     ) {}[m
+ [m
+     apply(state: State): State {[m
+[36m@@ -62,6 +120,7 @@[m [mexport class SpawnTarget implements Action {[m
+                         value: this.value,[m
+                         x:Viewport.CANVAS_WIDTH / 2 - Target.WIDTH / 2,[m
+                         y: -Target.HEIGHT,[m
+[32m+[m[32m                        isBonus: this.isBonus,[m
+                     },[m
+                 ],[m
+             };[m
+[1mdiff --git a/src/observables.ts b/src/observables.ts[m
+[1mindex d4301c3..50e1d6a 100644[m
+[1m--- a/src/observables.ts[m
+[1m+++ b/src/observables.ts[m
+[36m@@ -30,7 +30,7 @@[m [mconst randomTargetValue = (): number => Math.floor(Math.random() * 256); //*256[m
+ export const spawn$ = (): Observable<Action> => defer(() =>timer(randomSpawnDelay(),),)[m
+ .pipe(repeat(), [m
+       scan( targetIndex => targetIndex + 1, -1), //start from -1, so the target index become 0 and enter map, and next loop when timer produce 0, scan rmb the targetIndex is 0, will +q become 1[m
+[31m-      map(index =>new SpawnTarget(`target-${index}`,randomTargetValue(),), ),); //index id from targetIndex[m
+[32m+[m[32m      map(index =>new SpawnTarget(`target-${index}`,randomTargetValue(), randomBonus()), ),); //index id from targetIndex[m
+ [m
+ const randomSpawnDelay = (): number => 1000 + Math.floor(Math.random() * 2001); //math.random returns random decimal 0-1, then *2001 to become 0-2000. ect, then math.floor remove decimal part and add 1000 = 1000-3000(1-3sec)[m
+ [m
+[36m@@ -52,4 +52,6 @@[m [mexport const pause$ =(): Observable<Action> =>[m
+             filter(event =>event.code ==="KeyP"),[m
+             map(() =>new TogglePause(),[m
+             ),[m
+[31m-        );[m
+\ No newline at end of file[m
+[32m+[m[32m        );[m
+[32m+[m
+[32m+[m[32mexport const randomBonus = (): boolean => Math.random() < 0.2;[m
+\ No newline at end of file[m
+[1mdiff --git a/src/types.ts b/src/types.ts[m
+[1mindex 9009af1..0aade0d 100644[m
+[1m--- a/src/types.ts[m
+[1m+++ b/src/types.ts[m
+[36m@@ -25,4 +25,5 @@[m [mexport type FallingTargetView =[m
+         value: number;[m
+         x: number;[m
+         y: number;[m
+[32m+[m[32m        isBonus: boolean;[m
+     }>;[m
+\ No newline at end of file[m
+[1mdiff --git a/src/view.ts b/src/view.ts[m
+[1mindex ad84a6f..a5660d8 100644[m
+[1m--- a/src/view.ts[m
+[1m+++ b/src/view.ts[m
+[36m@@ -180,38 +180,74 @@[m [mexport const render = (): ((state: State) => void) => {[m
+ pausedText.textContent = "PAUSED";[m
+ svg.appendChild(pausedText);[m
+ [m
+[31m-       const targetNodes = new Map<string,{rect: SVGElement; text: SVGElement;}>();[m
+[31m-       const getTargetNode = (target: FallingTargetView,): [m
+[31m-       { rect: SVGElement;text: SVGElement;} => [m
+[31m-        { const existing = targetNodes.get(target.id);//if yes just reuse[m
+[31m-        if (existing) {return existing;}    [m
+[31m-            // If no, create the target rectangle[m
+[31m-    const rect = createSvgElement(svg.namespaceURI, "rect",[m
+[31m-            {[m
+[31m-                width:`${Target.WIDTH}`,[m
+[31m-                height:`${Target.HEIGHT}`,[m
+[31m-                rx:"6",[m
+[31m-                fill:"white",[m
+[31m-                stroke:"black",[m
+[31m-                "stroke-width":"2",[m
+[31m-                "data-fb-target-id":target.id,[m
+[31m-            },[m
+[31m-        );[m
+[31m-        const text = createSvgElement(svg.namespaceURI, "text",[m
+[32m+[m[32m      const targetNodes = new Map<[m
+[32m+[m[32m    string,[m
+[32m+[m[32m    {[m
+[32m+[m[32m        rect: SVGElement;[m
+[32m+[m[32m        text: SVGElement;[m
+[32m+[m[32m    }[m
+[32m+[m[32m>();[m
+[32m+[m
+[32m+[m[32mconst createTargetNode = ([m
+[32m+[m[32m    target: FallingTargetView,[m
+[32m+[m[32m): {[m
+[32m+[m[32m    rect: SVGElement;[m
+[32m+[m[32m    text: SVGElement;[m
+[32m+[m[32m} => {[m
+[32m+[m[32m    const rect = createSvgElement([m
+[32m+[m[32m        svg.namespaceURI,[m
+[32m+[m[32m        "rect",[m
+[32m+[m[32m        {[m
+[32m+[m[32m            width: `${Target.WIDTH}`,[m
+[32m+[m[32m            height: `${Target.HEIGHT}`,[m
+[32m+[m[32m            rx: "6",[m
+[32m+[m[32m            fill: "white",[m
+[32m+[m[32m            stroke: "black",[m
+[32m+[m[32m            "stroke-width": "2",[m
+[32m+[m[32m            "data-fb-target-id": target.id,[m
+[32m+[m[32m        },[m
+[32m+[m[32m    );[m
+[32m+[m
+[32m+[m[32m    const text = createSvgElement([m
+[32m+[m[32m        svg.namespaceURI,[m
+[32m+[m[32m        "text",[m
+         {[m
+             "text-anchor": "middle",[m
+             "font-family": "monospace",[m
+[31m-             fill: "black",[m
+[32m+[m[32m            fill: "black",[m
+             "data-fb-target-id": target.id,[m
+[31m-        },);[m
+[32m+[m[32m        },[m
+[32m+[m[32m    );[m
+ [m
+     svg.appendChild(rect);[m
+     svg.appendChild(text);[m
+ [m
+[31m-    const created = {rect, text};[m
+[31m-    targetNodes.set( target.id, created); // Save them using target.id[m
+[31m-    return created;};[m
+[32m+[m[32m    const created = {[m
+[32m+[m[32m        rect,[m
+[32m+[m[32m        text,[m
+[32m+[m[32m    };[m
+[32m+[m
+[32m+[m[32m    targetNodes.set([m
+[32m+[m[32m        target.id,[m
+[32m+[m[32m        created,[m
+[32m+[m[32m    );[m
+[32m+[m
+[32m+[m[32m    return created;[m
+[32m+[m[32m};[m
+[32m+[m
+[32m+[m[32mconst getTargetNode = ([m
+[32m+[m[32m    target: FallingTargetView,[m
+[32m+[m[32m): {[m
+[32m+[m[32m    rect: SVGElement;[m
+[32m+[m[32m    text: SVGElement;[m
+[32m+[m[32m} => {[m
+[32m+[m[32m    const existing =[m
+[32m+[m[32m        targetNodes.get(target.id);[m
+ [m
+[32m+[m[32m    return existing[m
+[32m+[m[32m        ? existing[m
+[32m+[m[32m        : createTargetNode(target);[m
+[32m+[m[32m};[m
+ [m
+ //update the SVG cells based on the current state when the state changes[m
+ return (state: State) => {[m
+[36m@@ -221,20 +257,40 @@[m [mreturn (state: State) => {[m
+         rect.setAttribute("y",`${target.y}`,);[m
+         text.setAttribute("x", `${target.x + Target.WIDTH / 2}`,);[m
+         text.setAttribute("y", `${target.y + Target.HEIGHT / 2 + 6}`,);[m
+[31m-        text.textContent = target.value.toString(16).toUpperCase().padStart(2, "0"); //padStart convert 1 character to 2 8->08[m
+[32m+[m[32m       const targetValue =[m
+[32m+[m[32m    target.value[m
+[32m+[m[32m        .toString(16)[m
+[32m+[m[32m        .toUpperCase()[m
+[32m+[m[32m        .padStart(2, "0");[m
+[32m+[m
+[32m+[m[32mtext.textContent =[m
+[32m+[m[32m    target.isBonus[m
+[32m+[m[32m        ? `⭐${targetValue}`[m
+[32m+[m[32m        : targetValue; //padStart convert 1 character to 2 8->08[m[41m  [m
+[32m+[m[32m        rect.setAttribute([m
+[32m+[m[32m    "stroke",[m
+[32m+[m[32mrect.style.stroke =[m
+[32m+[m[32m    target.isBonus[m
+[32m+[m[32m        ? "#FFD700"[m
+[32m+[m[32m        : "#000000"[m
+[32m+[m[32m);[m
+     });[m
+ [m
+     // a variable stores a set of target id[m
+ const activeTargetIds = new Set(state.allCurrentTargetsInPlay.map(target => target.id),); //takes whole target can return only the id, new set turns array ["id"] into {"id"}[m
+ [m
+[31m-    targetNodes.forEach(({ rect, text }, id) => {[m
+[31m-        if (!activeTargetIds.has(id)) //has is used with set/map to check whether the id exist[m
+[31m-        {[m
+[32m+[m[32m   Array.from(targetNodes.entries())[m
+[32m+[m[32m    .filter([m
+[32m+[m[32m        ([id]) =>[m
+[32m+[m[32m            !activeTargetIds.has(id),[m
+[32m+[m[32m    )[m
+[32m+[m[32m    .forEach([m
+[32m+[m[32m        ([id, { rect, text }]) => {[m
+             rect.remove();[m
+             text.remove();[m
+             targetNodes.delete(id);[m
+[31m-        }[m
+[31m-    },);   [m
+[32m+[m[32m        },[m
+[32m+[m[32m    );[m[41m  [m
+                          [m
+     digitCells.forEach([m
+     ({ rect, text }, index,) => {//{ rect, text } gets the SVG elements, index tells us which digit it is[m
