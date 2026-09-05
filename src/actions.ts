@@ -7,7 +7,7 @@ import {
     hasReachedCheckLine,
     removeTargetsOutsideCanvas,
     fallSpeedForElapsedTime,
-    initialState
+    initialState,
 } from "./state";
 import { Action, State, FallingTargetView } from "./types";
 import { Target, Viewport, Constants } from "./constants";
